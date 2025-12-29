@@ -32,16 +32,65 @@ export interface Product {
   status: 'active' | 'draft' | 'out_of_stock';
 }
 
+export interface StoreAddress {
+  region: string;
+  district: string;
+  street: string;
+  fullAddress: string;
+}
+
+export interface StoreTheme {
+  mode: 'light' | 'dark';
+  accentColor: 'blue' | 'red' | 'green' | 'orange';
+}
+
+export interface StorePolicies {
+  returns: string;
+  shipping: string;
+  terms: string;
+}
+
+export interface BusinessDetails {
+  registeredName: string;
+  tin: string;
+  registrationNumber: string;
+  registeredAddress: string;
+  registrationDate: string;
+  businessType: string;
+}
+
 export interface StoreInfo {
+  id: string;
   name: string;
   description: string;
+  category: string;
+  status: 'active' | 'inactive' | 'pending';
   logo?: string;
-  address: string;
+  banner?: string;
+  address: StoreAddress;
   phone: string;
   email: string;
   currency: string;
   businessHours: string;
+  theme: StoreTheme;
+  policies: StorePolicies;
+  businessDetails: BusinessDetails;
+  createdAt: string;
+  updatedAt: string;
 }
+
+export const storeCategories = [
+  'Electronics & Gadgets',
+  'Fashion & Apparel',
+  'Home & Living',
+  'Health & Beauty',
+  'Food & Beverages',
+  'Sports & Outdoors',
+  'Books & Stationery',
+  'Automotive',
+  'Baby & Kids',
+  'General Merchandise',
+] as const;
 
 export interface Notification {
   id: string;
@@ -205,13 +254,40 @@ export const mockProducts: Product[] = [
 
 // Mock Store Info
 export const mockStoreInfo: StoreInfo = {
+  id: 'store-001',
   name: 'TechHub Electronics',
-  description: 'Your one-stop shop for quality electronics and accessories in Dar es Salaam',
-  address: 'Masaki Business Park, Dar es Salaam, Tanzania',
+  description: 'Your one-stop shop for quality electronics and accessories in Dar es Salaam. We offer the latest gadgets, phone accessories, and computer peripherals at competitive prices.',
+  category: 'Electronics & Gadgets',
+  status: 'active',
+  address: {
+    region: 'Dar es Salaam',
+    district: 'Kinondoni',
+    street: 'Masaki Business Park, Plot 123',
+    fullAddress: 'Masaki Business Park, Kinondoni, Dar es Salaam, Tanzania',
+  },
   phone: '+255 712 345 678',
   email: 'info@techhub.co.tz',
   currency: 'TZS',
   businessHours: 'Mon-Sat: 8:00 AM - 6:00 PM',
+  theme: {
+    mode: 'light',
+    accentColor: 'blue',
+  },
+  policies: {
+    returns: 'Items can be returned within 7 days of purchase in original packaging. Refunds are processed within 3-5 business days after inspection. Electronics must be unopened for full refund.',
+    shipping: 'We deliver across Tanzania. Dar es Salaam: 1-2 business days. Other regions: 3-7 business days. Free shipping on orders above TZS 100,000.',
+    terms: 'By purchasing from TechHub Electronics, you agree to our terms of service. All products come with manufacturer warranty. We reserve the right to refuse service to anyone.',
+  },
+  businessDetails: {
+    registeredName: 'TechHub Electronics Tanzania Limited',
+    tin: 'TIN-123-456-789',
+    registrationNumber: 'BRELA-2021-00456',
+    registeredAddress: 'P.O. Box 12345, Dar es Salaam, Tanzania',
+    registrationDate: '2021-03-15',
+    businessType: 'Limited Liability Company',
+  },
+  createdAt: '2021-03-15T10:00:00Z',
+  updatedAt: '2024-01-10T14:30:00Z',
 };
 
 // Mock Notifications

@@ -31,7 +31,7 @@ const actions: QuickAction[] = [
     title: 'Edit Store Profile',
     description: 'Update store details',
     icon: Store,
-    href: '/store',
+    href: '/store?tab=profile',
     variant: 'outline',
   },
   {
