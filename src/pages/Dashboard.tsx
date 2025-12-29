@@ -5,10 +5,10 @@ import { RecentOrders } from '@/components/dashboard/RecentOrders';
 import { InventoryAlerts } from '@/components/dashboard/InventoryAlerts';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { NotificationsPanel } from '@/components/dashboard/NotificationsPanel';
-import { getDashboardKPIs, formatCurrency } from '@/data/mockData';
+import { getDashboardData, formatCurrency } from '@/data/mockData';
 
 export default function Dashboard() {
-  const kpis = getDashboardKPIs();
+  const dashboardData = getDashboardData();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -16,31 +16,49 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="Today's Orders"
-          value={kpis.todayOrders}
+          value={dashboardData.orders.todaysCount}
           icon={ShoppingCart}
-          trend={{ value: 12, isPositive: true }}
+          trend={{ 
+            value: dashboardData.orders.trends.todaysCountChange, 
+            isPositive: dashboardData.orders.trends.todaysCountIsPositive,
+            label: 'vs yesterday'
+          }}
           href="/orders"
           iconColor="bg-primary/10 text-primary"
         />
         <KPICard
           title="Today's Revenue"
-          value={formatCurrency(kpis.todayRevenue)}
+          value={formatCurrency(dashboardData.sales.todaysRevenue)}
           icon={DollarSign}
-          trend={{ value: 8, isPositive: true }}
+          trend={{ 
+            value: dashboardData.sales.trends.revenueChange, 
+            isPositive: dashboardData.sales.trends.revenueIsPositive,
+            label: '% vs yesterday'
+          }}
           href="/orders"
           iconColor="bg-success/10 text-success"
         />
         <KPICard
           title="Low Stock Items"
-          value={kpis.lowStockProducts}
+          value={dashboardData.inventory.lowStockCount}
           icon={AlertTriangle}
+          trend={{ 
+            value: dashboardData.inventory.trends.lowStockChange, 
+            isPositive: dashboardData.inventory.trends.lowStockIsPositive,
+            label: 'vs last week'
+          }}
           href="/products"
           iconColor="bg-warning/10 text-warning"
         />
         <KPICard
           title="Pending Orders"
-          value={kpis.pendingOrders}
+          value={dashboardData.orders.pendingCount}
           icon={Clock}
+          trend={{ 
+            value: dashboardData.orders.trends.pendingCountChange, 
+            isPositive: dashboardData.orders.trends.pendingCountIsPositive,
+            label: 'vs yesterday'
+          }}
           href="/orders"
           iconColor="bg-accent/10 text-accent"
         />
