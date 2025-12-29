@@ -206,11 +206,11 @@ export const mockProducts: Product[] = [
 // Mock Store Info
 export const mockStoreInfo: StoreInfo = {
   name: 'TechHub Electronics',
-  description: 'Your one-stop shop for quality electronics and accessories in Nairobi',
-  address: 'Westlands Business Park, Nairobi, Kenya',
-  phone: '+254 712 345 678',
-  email: 'info@techhub.co.ke',
-  currency: 'KES',
+  description: 'Your one-stop shop for quality electronics and accessories in Dar es Salaam',
+  address: 'Masaki Business Park, Dar es Salaam, Tanzania',
+  phone: '+255 712 345 678',
+  email: 'info@techhub.co.tz',
+  currency: 'TZS',
   businessHours: 'Mon-Sat: 8:00 AM - 6:00 PM',
 };
 
@@ -291,12 +291,11 @@ export const getOrderStatusColor = (status: Order['status']) => {
   }
 };
 
-export const formatCurrency = (amount: number, currency = 'KES') => {
-  return new Intl.NumberFormat('en-KE', {
-    style: 'currency',
-    currency,
+export const formatCurrency = (amount: number) => {
+  return `TZS ${new Intl.NumberFormat('en-TZ', {
     minimumFractionDigits: 0,
-  }).format(amount);
+    maximumFractionDigits: 0,
+  }).format(amount)}`;
 };
 
 export const formatDate = (dateString: string) => {
@@ -314,24 +313,83 @@ export const formatTime = (dateString: string) => {
   });
 };
 
-// Dashboard KPIs
-export const getDashboardKPIs = () => {
-  const todayOrders = mockOrders.filter(
+// Structured Dashboard Data - Future-proof for backend integration
+export interface DashboardData {
+  orders: {
+    todaysCount: number;
+    pendingCount: number;
+    trends: {
+      todaysCountChange: number;
+      todaysCountIsPositive: boolean;
+      pendingCountChange: number;
+      pendingCountIsPositive: boolean;
+    };
+  };
+  sales: {
+    todaysRevenue: number;
+    trends: {
+      revenueChange: number;
+      revenueIsPositive: boolean;
+    };
+  };
+  inventory: {
+    lowStockCount: number;
+    trends: {
+      lowStockChange: number;
+      lowStockIsPositive: boolean;
+    };
+  };
+}
+
+export const getDashboardData = (): DashboardData => {
+  // Calculate from mock data - replace with API calls later
+  const todaysOrders = mockOrders.filter(
     order => new Date(order.createdAt).toDateString() === new Date().toDateString()
-  ).length || 3; // Default to 3 for demo
+  ).length || 8;
   
   const pendingOrders = mockOrders.filter(order => order.status === 'pending').length;
   
   const lowStockProducts = mockProducts.filter(product => product.stock <= 5).length;
   
-  const todayRevenue = mockOrders
+  const todaysRevenue = mockOrders
     .filter(order => new Date(order.createdAt).toDateString() === new Date().toDateString())
-    .reduce((sum, order) => sum + order.total, 0) || 77500; // Default for demo
+    .reduce((sum, order) => sum + order.total, 0) || 245000;
   
   return {
-    todayOrders,
-    pendingOrders,
-    lowStockProducts,
-    todayRevenue,
+    orders: {
+      todaysCount: todaysOrders,
+      pendingCount: pendingOrders,
+      trends: {
+        todaysCountChange: 12,
+        todaysCountIsPositive: true,
+        pendingCountChange: 2,
+        pendingCountIsPositive: false,
+      },
+    },
+    sales: {
+      todaysRevenue: todaysRevenue,
+      trends: {
+        revenueChange: 8,
+        revenueIsPositive: true,
+      },
+    },
+    inventory: {
+      lowStockCount: lowStockProducts,
+      trends: {
+        lowStockChange: 3,
+        lowStockIsPositive: false,
+      },
+    },
+  };
+};
+
+// Legacy function for backwards compatibility
+export const getDashboardKPIs = () => {
+  const data = getDashboardData();
+  return {
+    todayOrders: data.orders.todaysCount,
+    pendingOrders: data.orders.pendingCount,
+    lowStockProducts: data.inventory.lowStockCount,
+    todayRevenue: data.sales.todaysRevenue,
   };
 };

@@ -10,6 +10,7 @@ interface KPICardProps {
   trend?: {
     value: number;
     isPositive: boolean;
+    label?: string;
   };
   href: string;
   iconColor?: string;
@@ -50,7 +51,7 @@ export function KPICard({
               <p className="text-sm text-muted-foreground font-medium">{title}</p>
               <p className="text-2xl font-bold text-foreground">{value}</p>
               {trend && (
-                <div className="flex items-center gap-1 mt-2">
+                <div className="flex items-center gap-1.5 mt-2">
                   {trend.isPositive ? (
                     <ArrowUpRight className="h-4 w-4 text-success" />
                   ) : (
@@ -62,7 +63,7 @@ export function KPICard({
                       trend.isPositive ? 'text-success' : 'text-destructive'
                     )}
                   >
-                    {trend.value}% vs yesterday
+                    {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)} {trend.label || 'vs yesterday'}
                   </span>
                 </div>
               )}
