@@ -1,155 +1,165 @@
-import { useState } from 'react';
-import { Store, MapPin, Phone, Mail, Clock, Save } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { mockStoreInfo } from '@/data/mockData';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { Store, User, Palette, FileText, Building2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import StoreOverview from '@/components/store/StoreOverview';
+import StoreProfile from '@/components/store/StoreProfile';
+import StoreBranding from '@/components/store/StoreBranding';
+import StorePolicies from '@/components/store/StorePolicies';
+import BusinessDetails from '@/components/store/BusinessDetails';
+import { mockStoreInfo, StoreInfo } from '@/data/mockData';
+
+const tabs = [
+  { value: 'overview', label: 'Overview', icon: Store },
+  { value: 'profile', label: 'Profile', icon: User },
+  { value: 'branding', label: 'Branding', icon: Palette },
+  { value: 'policies', label: 'Policies', icon: FileText },
+  { value: 'business', label: 'Business Details', icon: Building2 },
+];
 
 export default function StoreManagement() {
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [storeInfo, setStoreInfo] = useState(mockStoreInfo);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [storeInfo, setStoreInfo] = useState<StoreInfo>(mockStoreInfo);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      toast({
-        title: 'Store updated',
-        description: 'Your store information has been saved.',
-      });
-      setIsSaving(false);
-    }, 1000);
+  const currentTab = searchParams.get('tab') || 'overview';
+
+  // Handle unsaved changes warning when navigating away
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const handleTabChange = (newTab: string) => {
+    if (hasUnsavedChanges && newTab !== currentTab) {
+      setPendingTab(newTab);
+      setShowLeaveDialog(true);
+    } else {
+      setSearchParams({ tab: newTab });
+    }
+  };
+
+  const handleNavigate = (tab: string) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(tab);
+      setShowLeaveDialog(true);
+    } else {
+      setSearchParams({ tab });
+    }
+  };
+
+  const confirmLeave = () => {
+    setHasUnsavedChanges(false);
+    if (pendingTab) {
+      setSearchParams({ tab: pendingTab });
+      setPendingTab(null);
+    }
+    if (pendingNavigation) {
+      setSearchParams({ tab: pendingNavigation });
+      setPendingNavigation(null);
+    }
+    setShowLeaveDialog(false);
+  };
+
+  const cancelLeave = () => {
+    setPendingTab(null);
+    setPendingNavigation(null);
+    setShowLeaveDialog(false);
+  };
+
+  const handleStoreUpdate = (updatedStore: StoreInfo) => {
+    setStoreInfo(updatedStore);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
-      {/* Store Profile */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Store className="h-5 w-5" />
-            Store Profile
-          </CardTitle>
-          <CardDescription>
-            Manage your store's public information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Logo */}
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-2xl">TH</span>
-            </div>
-            <div>
-              <Button variant="outline" size="sm">Change Logo</Button>
-              <p className="text-xs text-muted-foreground mt-1">
-                Recommended: 200x200px, PNG or JPG
-              </p>
-            </div>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap gap-1">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="flex items-center gap-2 data-[state=active]:bg-background"
+            >
+              <tab.icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-          <Separator />
+        <div className="mt-6">
+          <TabsContent value="overview" className="m-0">
+            <StoreOverview store={storeInfo} onNavigate={handleNavigate} />
+          </TabsContent>
 
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="storeName">Store Name</Label>
-              <Input
-                id="storeName"
-                value={storeInfo.name}
-                onChange={(e) => setStoreInfo({ ...storeInfo, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Input id="currency" value={storeInfo.currency} disabled />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Store Description</Label>
-            <Textarea
-              id="description"
-              value={storeInfo.description}
-              onChange={(e) => setStoreInfo({ ...storeInfo, description: e.target.value })}
-              rows={3}
+          <TabsContent value="profile" className="m-0">
+            <StoreProfile 
+              store={storeInfo} 
+              onUpdate={handleStoreUpdate}
+              hasUnsavedChanges={hasUnsavedChanges}
+              setHasUnsavedChanges={setHasUnsavedChanges}
             />
-          </div>
-        </CardContent>
-      </Card>
+          </TabsContent>
 
-      {/* Contact Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Contact Information</CardTitle>
-          <CardDescription>
-            How customers can reach you
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={storeInfo.email}
-                onChange={(e) => setStoreInfo({ ...storeInfo, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                value={storeInfo.phone}
-                onChange={(e) => setStoreInfo({ ...storeInfo, phone: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Business Address
-            </Label>
-            <Input
-              id="address"
-              value={storeInfo.address}
-              onChange={(e) => setStoreInfo({ ...storeInfo, address: e.target.value })}
+          <TabsContent value="branding" className="m-0">
+            <StoreBranding 
+              store={storeInfo} 
+              onUpdate={handleStoreUpdate}
+              hasUnsavedChanges={hasUnsavedChanges}
+              setHasUnsavedChanges={setHasUnsavedChanges}
             />
-          </div>
+          </TabsContent>
 
-          <div className="space-y-2">
-            <Label htmlFor="hours" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Business Hours
-            </Label>
-            <Input
-              id="hours"
-              value={storeInfo.businessHours}
-              onChange={(e) => setStoreInfo({ ...storeInfo, businessHours: e.target.value })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <TabsContent value="policies" className="m-0">
+            <StorePolicies store={storeInfo} />
+          </TabsContent>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
+          <TabsContent value="business" className="m-0">
+            <BusinessDetails store={storeInfo} />
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelLeave}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeave} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Leave Without Saving
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
