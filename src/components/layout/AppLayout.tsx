@@ -8,8 +8,8 @@ const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/store': 'Store Management',
   '/products': 'Products',
+  '/products/new': 'New Product',
   '/orders': 'Orders',
-  '/orders/': 'Order Details',
   '/settings': 'Settings',
   '/support': 'Support',
 };
@@ -26,9 +26,9 @@ export function AppLayout() {
 
   // Get page title based on current path
   const getPageTitle = () => {
-    if (location.pathname.startsWith('/orders/')) {
-      return 'Order Details';
-    }
+    if (location.pathname.startsWith('/orders/')) return 'Order Details';
+    if (location.pathname.match(/^\/products\/[^/]+\/edit$/)) return 'Edit Product';
+    if (location.pathname.match(/^\/products\/[^/]+$/)) return 'Product Details';
     return pageTitles[location.pathname] || 'Dashboard';
   };
 

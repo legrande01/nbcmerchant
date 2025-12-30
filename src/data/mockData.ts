@@ -20,16 +20,53 @@ export interface OrderItem {
   image?: string;
 }
 
+// Extended Product interface with variants and activity tracking
+export interface ProductVariant {
+  id: string;
+  name: string;
+  type: 'size' | 'color' | 'material' | 'style';
+  options: ProductVariantOption[];
+}
+
+export interface ProductVariantOption {
+  id: string;
+  value: string;
+  priceModifier: number;
+  stockQuantity: number;
+  sku: string;
+}
+
+export interface ProductActivityLog {
+  id: string;
+  action: 'created' | 'updated' | 'published' | 'archived' | 'restocked' | 'price_changed';
+  description: string;
+  timestamp: string;
+  user: string;
+}
+
+export interface ProductInventory {
+  stock: number;
+  lowStockThreshold: number;
+  trackInventory: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  compareAtPrice?: number;
+  taxIncluded: boolean;
   stock: number;
   category: string;
-  image?: string;
+  images: string[];
   sku: string;
-  status: 'active' | 'draft' | 'out_of_stock';
+  status: 'active' | 'draft' | 'archived';
+  variants: ProductVariant[];
+  inventory: ProductInventory;
+  activityLog: ProductActivityLog[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StoreAddress {
@@ -90,6 +127,19 @@ export const storeCategories = [
   'Automotive',
   'Baby & Kids',
   'General Merchandise',
+] as const;
+
+export const productCategories = [
+  'Electronics',
+  'Accessories',
+  'Clothing',
+  'Footwear',
+  'Home & Garden',
+  'Sports',
+  'Beauty',
+  'Toys',
+  'Books',
+  'Food & Beverages',
 ] as const;
 
 export interface Notification {
@@ -178,79 +228,334 @@ export const mockOrders: Order[] = [
   },
 ];
 
-// Mock Products
+// Mock Products with extended data
 export const mockProducts: Product[] = [
   {
     id: '1',
     name: 'Wireless Bluetooth Headphones',
-    description: 'High-quality wireless headphones with noise cancellation',
+    description: 'High-quality wireless headphones with noise cancellation. Features include 30-hour battery life, comfortable ear cushions, and premium sound quality.',
     price: 45000,
+    compareAtPrice: 55000,
+    taxIncluded: true,
     stock: 24,
     category: 'Electronics',
+    images: [],
     sku: 'WBH-001',
     status: 'active',
+    variants: [
+      {
+        id: 'v1',
+        name: 'Color',
+        type: 'color',
+        options: [
+          { id: 'v1o1', value: 'Black', priceModifier: 0, stockQuantity: 12, sku: 'WBH-001-BLK' },
+          { id: 'v1o2', value: 'White', priceModifier: 0, stockQuantity: 8, sku: 'WBH-001-WHT' },
+          { id: 'v1o3', value: 'Blue', priceModifier: 2000, stockQuantity: 4, sku: 'WBH-001-BLU' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 24,
+      lowStockThreshold: 5,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a1', action: 'created', description: 'Product created', timestamp: '2024-01-01T10:00:00Z', user: 'Admin' },
+      { id: 'a2', action: 'published', description: 'Product published to store', timestamp: '2024-01-02T09:00:00Z', user: 'Admin' },
+      { id: 'a3', action: 'price_changed', description: 'Price updated from TZS 50,000 to TZS 45,000', timestamp: '2024-01-10T14:30:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-01T10:00:00Z',
+    updatedAt: '2024-01-10T14:30:00Z',
   },
   {
     id: '2',
     name: 'Phone Case - Samsung A54',
-    description: 'Durable protective case for Samsung Galaxy A54',
+    description: 'Durable protective case for Samsung Galaxy A54. Made from premium silicone with shock-absorbing corners.',
     price: 3500,
+    taxIncluded: true,
     stock: 3,
     category: 'Accessories',
+    images: [],
     sku: 'PC-SA54',
     status: 'active',
+    variants: [
+      {
+        id: 'v2',
+        name: 'Color',
+        type: 'color',
+        options: [
+          { id: 'v2o1', value: 'Clear', priceModifier: 0, stockQuantity: 1, sku: 'PC-SA54-CLR' },
+          { id: 'v2o2', value: 'Black', priceModifier: 0, stockQuantity: 2, sku: 'PC-SA54-BLK' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 3,
+      lowStockThreshold: 10,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a4', action: 'created', description: 'Product created', timestamp: '2024-01-05T11:00:00Z', user: 'Admin' },
+      { id: 'a5', action: 'published', description: 'Product published to store', timestamp: '2024-01-05T11:30:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-05T11:00:00Z',
+    updatedAt: '2024-01-05T11:30:00Z',
   },
   {
     id: '3',
     name: 'USB-C Charging Cable 2m',
-    description: 'Fast charging USB-C cable, 2 meters long',
+    description: 'Fast charging USB-C cable, 2 meters long. Supports up to 100W power delivery.',
     price: 1500,
+    taxIncluded: true,
     stock: 0,
     category: 'Accessories',
+    images: [],
     sku: 'USB-C2M',
-    status: 'out_of_stock',
+    status: 'active',
+    variants: [],
+    inventory: {
+      stock: 0,
+      lowStockThreshold: 20,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a6', action: 'created', description: 'Product created', timestamp: '2024-01-03T09:00:00Z', user: 'Admin' },
+      { id: 'a7', action: 'published', description: 'Product published to store', timestamp: '2024-01-03T09:30:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-03T09:00:00Z',
+    updatedAt: '2024-01-03T09:30:00Z',
   },
   {
     id: '4',
     name: 'Laptop Stand Adjustable',
-    description: 'Ergonomic aluminum laptop stand with adjustable height',
+    description: 'Ergonomic aluminum laptop stand with adjustable height. Compatible with laptops up to 17 inches.',
     price: 8500,
+    compareAtPrice: 12000,
+    taxIncluded: true,
     stock: 12,
     category: 'Electronics',
+    images: [],
     sku: 'LS-ADJ',
     status: 'active',
+    variants: [
+      {
+        id: 'v3',
+        name: 'Material',
+        type: 'material',
+        options: [
+          { id: 'v3o1', value: 'Aluminum Silver', priceModifier: 0, stockQuantity: 8, sku: 'LS-ADJ-SLV' },
+          { id: 'v3o2', value: 'Aluminum Space Gray', priceModifier: 500, stockQuantity: 4, sku: 'LS-ADJ-GRY' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 12,
+      lowStockThreshold: 5,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a8', action: 'created', description: 'Product created', timestamp: '2024-01-02T08:00:00Z', user: 'Admin' },
+      { id: 'a9', action: 'published', description: 'Product published to store', timestamp: '2024-01-02T10:00:00Z', user: 'Admin' },
+      { id: 'a10', action: 'restocked', description: 'Inventory restocked: +20 units', timestamp: '2024-01-08T15:00:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-02T08:00:00Z',
+    updatedAt: '2024-01-08T15:00:00Z',
   },
   {
     id: '5',
     name: 'Wireless Mouse',
-    description: 'Ergonomic wireless mouse with long battery life',
+    description: 'Ergonomic wireless mouse with long battery life. Features silent click and adjustable DPI.',
     price: 2500,
+    taxIncluded: true,
     stock: 2,
     category: 'Electronics',
+    images: [],
     sku: 'WM-001',
     status: 'active',
+    variants: [
+      {
+        id: 'v4',
+        name: 'Color',
+        type: 'color',
+        options: [
+          { id: 'v4o1', value: 'Black', priceModifier: 0, stockQuantity: 1, sku: 'WM-001-BLK' },
+          { id: 'v4o2', value: 'White', priceModifier: 0, stockQuantity: 1, sku: 'WM-001-WHT' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 2,
+      lowStockThreshold: 10,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a11', action: 'created', description: 'Product created', timestamp: '2024-01-04T12:00:00Z', user: 'Admin' },
+      { id: 'a12', action: 'published', description: 'Product published to store', timestamp: '2024-01-04T13:00:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-04T12:00:00Z',
+    updatedAt: '2024-01-04T13:00:00Z',
   },
   {
     id: '6',
     name: 'Smart Watch Band',
-    description: 'Replacement band for popular smart watches',
+    description: 'Replacement band for popular smart watches. Made from durable silicone.',
     price: 1800,
+    taxIncluded: true,
     stock: 45,
     category: 'Accessories',
+    images: [],
     sku: 'SWB-001',
     status: 'active',
+    variants: [
+      {
+        id: 'v5',
+        name: 'Size',
+        type: 'size',
+        options: [
+          { id: 'v5o1', value: 'Small (38-40mm)', priceModifier: 0, stockQuantity: 15, sku: 'SWB-001-SM' },
+          { id: 'v5o2', value: 'Large (42-44mm)', priceModifier: 0, stockQuantity: 15, sku: 'SWB-001-LG' },
+          { id: 'v5o3', value: 'XL (45-49mm)', priceModifier: 200, stockQuantity: 15, sku: 'SWB-001-XL' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 45,
+      lowStockThreshold: 10,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a13', action: 'created', description: 'Product created', timestamp: '2024-01-06T10:00:00Z', user: 'Admin' },
+      { id: 'a14', action: 'published', description: 'Product published to store', timestamp: '2024-01-06T10:30:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-06T10:00:00Z',
+    updatedAt: '2024-01-06T10:30:00Z',
   },
   {
     id: '7',
     name: 'Portable Power Bank 20000mAh',
-    description: 'High capacity power bank with fast charging',
+    description: 'High capacity power bank with fast charging. Features dual USB-A and USB-C ports.',
     price: 6500,
+    taxIncluded: true,
     stock: 8,
     category: 'Electronics',
+    images: [],
     sku: 'PB-20K',
     status: 'active',
+    variants: [],
+    inventory: {
+      stock: 8,
+      lowStockThreshold: 5,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a15', action: 'created', description: 'Product created', timestamp: '2024-01-07T09:00:00Z', user: 'Admin' },
+      { id: 'a16', action: 'published', description: 'Product published to store', timestamp: '2024-01-07T09:30:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-07T09:00:00Z',
+    updatedAt: '2024-01-07T09:30:00Z',
+  },
+  {
+    id: '8',
+    name: 'Premium Cotton T-Shirt',
+    description: 'High-quality cotton t-shirt with comfortable fit. Available in multiple sizes and colors.',
+    price: 15000,
+    compareAtPrice: 18000,
+    taxIncluded: true,
+    stock: 0,
+    category: 'Clothing',
+    images: [],
+    sku: 'TS-PREM',
+    status: 'draft',
+    variants: [
+      {
+        id: 'v6',
+        name: 'Size',
+        type: 'size',
+        options: [
+          { id: 'v6o1', value: 'S', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-S' },
+          { id: 'v6o2', value: 'M', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-M' },
+          { id: 'v6o3', value: 'L', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-L' },
+          { id: 'v6o4', value: 'XL', priceModifier: 500, stockQuantity: 0, sku: 'TS-PREM-XL' },
+        ],
+      },
+      {
+        id: 'v7',
+        name: 'Color',
+        type: 'color',
+        options: [
+          { id: 'v7o1', value: 'White', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-WHT' },
+          { id: 'v7o2', value: 'Black', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-BLK' },
+          { id: 'v7o3', value: 'Navy', priceModifier: 0, stockQuantity: 0, sku: 'TS-PREM-NVY' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 0,
+      lowStockThreshold: 20,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a17', action: 'created', description: 'Product created', timestamp: '2024-01-12T14:00:00Z', user: 'Admin' },
+    ],
+    createdAt: '2024-01-12T14:00:00Z',
+    updatedAt: '2024-01-12T14:00:00Z',
+  },
+  {
+    id: '9',
+    name: 'Vintage Leather Wallet',
+    description: 'Handcrafted leather wallet with RFID blocking. Features multiple card slots and bill compartment.',
+    price: 25000,
+    taxIncluded: true,
+    stock: 15,
+    category: 'Accessories',
+    images: [],
+    sku: 'WLT-VNT',
+    status: 'archived',
+    variants: [
+      {
+        id: 'v8',
+        name: 'Color',
+        type: 'color',
+        options: [
+          { id: 'v8o1', value: 'Brown', priceModifier: 0, stockQuantity: 10, sku: 'WLT-VNT-BRN' },
+          { id: 'v8o2', value: 'Black', priceModifier: 0, stockQuantity: 5, sku: 'WLT-VNT-BLK' },
+        ],
+      },
+    ],
+    inventory: {
+      stock: 15,
+      lowStockThreshold: 5,
+      trackInventory: true,
+    },
+    activityLog: [
+      { id: 'a18', action: 'created', description: 'Product created', timestamp: '2023-11-01T10:00:00Z', user: 'Admin' },
+      { id: 'a19', action: 'published', description: 'Product published to store', timestamp: '2023-11-01T11:00:00Z', user: 'Admin' },
+      { id: 'a20', action: 'archived', description: 'Product archived - discontinued', timestamp: '2024-01-10T16:00:00Z', user: 'Admin' },
+    ],
+    createdAt: '2023-11-01T10:00:00Z',
+    updatedAt: '2024-01-10T16:00:00Z',
   },
 ];
+
+// Product data accessor functions
+export const getProductById = (id: string): Product | undefined => {
+  return mockProducts.find(p => p.id === id);
+};
+
+export const getProductsByStatus = (status: Product['status']): Product[] => {
+  return mockProducts.filter(p => p.status === status);
+};
+
+export const getLowStockProducts = (threshold?: number): Product[] => {
+  return mockProducts.filter(p => {
+    const limit = threshold ?? p.inventory.lowStockThreshold;
+    return p.stock <= limit && p.status !== 'archived';
+  });
+};
+
+export const getOutOfStockProducts = (): Product[] => {
+  return mockProducts.filter(p => p.stock === 0 && p.status !== 'archived');
+};
 
 // Mock Store Info
 export const mockStoreInfo: StoreInfo = {
@@ -367,6 +672,32 @@ export const getOrderStatusColor = (status: Order['status']) => {
   }
 };
 
+export const getProductStatusColor = (status: Product['status']) => {
+  switch (status) {
+    case 'active':
+      return 'success';
+    case 'draft':
+      return 'warning';
+    case 'archived':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
+};
+
+export const getProductStatusLabel = (status: Product['status']) => {
+  switch (status) {
+    case 'active':
+      return 'Active';
+    case 'draft':
+      return 'Draft';
+    case 'archived':
+      return 'Archived';
+    default:
+      return status;
+  }
+};
+
 export const formatCurrency = (amount: number) => {
   return `TZS ${new Intl.NumberFormat('en-TZ', {
     minimumFractionDigits: 0,
@@ -387,6 +718,10 @@ export const formatTime = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+export const formatDateTime = (dateString: string) => {
+  return `${formatDate(dateString)} at ${formatTime(dateString)}`;
 };
 
 // Structured Dashboard Data - Future-proof for backend integration
@@ -425,7 +760,9 @@ export const getDashboardData = (): DashboardData => {
   
   const pendingOrders = mockOrders.filter(order => order.status === 'pending').length;
   
-  const lowStockProducts = mockProducts.filter(product => product.stock <= 5).length;
+  const lowStockProducts = mockProducts.filter(product => 
+    product.stock <= product.inventory.lowStockThreshold && product.status !== 'archived'
+  ).length;
   
   const todaysRevenue = mockOrders
     .filter(order => new Date(order.createdAt).toDateString() === new Date().toDateString())
