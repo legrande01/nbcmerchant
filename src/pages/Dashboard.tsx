@@ -60,6 +60,7 @@ export default function Dashboard() {
             label: 'vs yesterday'
           }}
           href="/orders"
+          searchParams={{ status: 'pending' }}
           iconColor="bg-accent/10 text-accent"
         />
       </div>
