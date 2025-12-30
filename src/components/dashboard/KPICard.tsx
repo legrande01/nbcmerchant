@@ -13,6 +13,7 @@ interface KPICardProps {
     label?: string;
   };
   href: string;
+  searchParams?: Record<string, string>;
   iconColor?: string;
   loading?: boolean;
 }

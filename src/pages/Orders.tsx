@@ -1,121 +1,92 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Filter, Eye } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { mockOrders, formatCurrency, formatDate, getOrderStatusColor } from '@/data/mockData';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { DateRange } from 'react-day-picker';
+import { OrderFilters } from '@/components/orders/OrderFilters';
+import { OrdersTable } from '@/components/orders/OrdersTable';
+import { mockOrders, OrderStatus, PaymentStatus } from '@/data/mockData';
 
 export default function Orders() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize filters from URL params (for Dashboard integration)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
+  const [paymentFilter, setPaymentFilter] = useState(searchParams.get('payment') || 'all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [isLoading] = useState(false);
 
-  const filteredOrders = mockOrders.filter((order) => {
-    const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Update URL when status filter changes
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    if (value === 'all') {
+      searchParams.delete('status');
+    } else {
+      searchParams.set('status', value);
+    }
+    setSearchParams(searchParams);
+  };
+
+  // Filter orders
+  const filteredOrders = useMemo(() => {
+    return mockOrders.filter((order) => {
+      // Search filter
+      const matchesSearch =
+        searchQuery === '' ||
+        order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+
+      // Payment filter
+      const matchesPayment = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
+
+      // Date range filter
+      let matchesDate = true;
+      if (dateRange?.from) {
+        const orderDate = new Date(order.createdAt);
+        matchesDate = orderDate >= dateRange.from;
+        if (dateRange.to) {
+          matchesDate = matchesDate && orderDate <= dateRange.to;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesPayment && matchesDate;
+    });
+  }, [searchQuery, statusFilter, paymentFilter, dateRange]);
+
+  // Count active filters
+  const activeFiltersCount = [
+    statusFilter !== 'all',
+    paymentFilter !== 'all',
+    dateRange?.from !== undefined,
+  ].filter(Boolean).length;
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setPaymentFilter('all');
+    setDateRange(undefined);
+    setSearchParams({});
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search orders by number or customer..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <OrderFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusChange={handleStatusChange}
+        paymentFilter={paymentFilter}
+        onPaymentChange={setPaymentFilter}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        activeFiltersCount={activeFiltersCount}
+        onClearFilters={handleClearFilters}
+      />
 
-      {/* Orders Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{order.customerName}</p>
-                        <p className="text-sm text-muted-foreground">{order.customerEmail}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{order.items.length} item{order.items.length !== 1 ? 's' : ''}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(order.total)}</TableCell>
-                    <TableCell>
-                      <Badge variant={getOrderStatusColor(order.status) as any} className="capitalize">
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(order.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/orders/${order.id}`}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <OrdersTable orders={filteredOrders} isLoading={isLoading} />
     </div>
   );
 }
