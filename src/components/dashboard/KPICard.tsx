@@ -24,9 +24,19 @@ export function KPICard({
   icon: Icon,
   trend,
   href,
+  searchParams,
   iconColor = 'bg-primary/10 text-primary',
   loading = false,
 }: KPICardProps) {
+  // Build URL with search params
+  const buildUrl = () => {
+    if (!searchParams || Object.keys(searchParams).length === 0) {
+      return href;
+    }
+    const params = new URLSearchParams(searchParams);
+    return `${href}?${params.toString()}`;
+  };
+
   if (loading) {
     return (
       <Card className="hover:shadow-md transition-shadow">
@@ -44,7 +54,7 @@ export function KPICard({
   }
 
   return (
-    <Link to={href}>
+    <Link to={buildUrl()}>
       <Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20 cursor-pointer group">
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
