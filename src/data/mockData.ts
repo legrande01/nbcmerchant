@@ -1,20 +1,45 @@
 // Mock data for NBC Merchant Portal
 
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
+export type PaymentStatus = 'paid' | 'unpaid';
+
+export interface OrderTimelineEntry {
+  id: string;
+  status: OrderStatus;
+  timestamp: string;
+  note?: string;
+}
+
+export interface OrderNote {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
+  customerPhone: string;
   items: OrderItem[];
+  subtotal: number;
+  shippingCost: number;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: string;
   createdAt: string;
   shippingAddress: string;
+  statusTimeline: OrderTimelineEntry[];
+  notes: OrderNote[];
 }
 
 export interface OrderItem {
   id: string;
   productName: string;
+  sku: string;
   quantity: number;
   price: number;
   image?: string;
@@ -157,74 +182,285 @@ export interface DailyStats {
   revenue: number;
 }
 
-// Mock Orders
+// Order status flow definitions
+export const orderStatusFlow: Record<OrderStatus, OrderStatus[]> = {
+  pending: ['processing', 'cancelled'],
+  processing: ['shipped', 'cancelled'],
+  shipped: ['delivered', 'cancelled'],
+  delivered: ['completed'],
+  completed: [],
+  cancelled: [],
+  refunded: [],
+};
+
+export const orderStatusLabels: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  refunded: 'Refunded',
+};
+
+// Mock Orders with extended data
 export const mockOrders: Order[] = [
   {
     id: '1',
     orderNumber: 'NBC-2024-001',
     customerName: 'John Mwangi',
     customerEmail: 'john.mwangi@email.com',
+    customerPhone: '+255 712 345 678',
     items: [
-      { id: '1', productName: 'Wireless Bluetooth Headphones', quantity: 1, price: 45000 },
-      { id: '2', productName: 'Phone Case - Samsung A54', quantity: 2, price: 3500 },
+      { id: '1', productName: 'Wireless Bluetooth Headphones', sku: 'WBH-001-BLK', quantity: 1, price: 45000 },
+      { id: '2', productName: 'Phone Case - Samsung A54', sku: 'PC-SA54-CLR', quantity: 2, price: 3500 },
     ],
-    total: 52000,
+    subtotal: 52000,
+    shippingCost: 5000,
+    total: 57000,
     status: 'pending',
+    paymentStatus: 'paid',
+    paymentMethod: 'Mobile Money (M-Pesa)',
     createdAt: '2024-01-15T10:30:00Z',
-    shippingAddress: 'Westlands, Nairobi, Kenya',
+    shippingAddress: 'Plot 45, Masaki Road, Kinondoni, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't1', status: 'pending', timestamp: '2024-01-15T10:30:00Z', note: 'Order placed by customer' },
+    ],
+    notes: [
+      { id: 'n1', content: 'Customer requested express delivery', createdAt: '2024-01-15T10:35:00Z', author: 'System' },
+    ],
   },
   {
     id: '2',
     orderNumber: 'NBC-2024-002',
     customerName: 'Grace Wanjiku',
     customerEmail: 'grace.w@email.com',
+    customerPhone: '+255 713 456 789',
     items: [
-      { id: '3', productName: 'USB-C Charging Cable 2m', quantity: 3, price: 1500 },
+      { id: '3', productName: 'USB-C Charging Cable 2m', sku: 'USB-C2M', quantity: 3, price: 1500 },
     ],
-    total: 4500,
+    subtotal: 4500,
+    shippingCost: 2500,
+    total: 7000,
     status: 'processing',
+    paymentStatus: 'paid',
+    paymentMethod: 'Bank Transfer',
     createdAt: '2024-01-15T09:15:00Z',
-    shippingAddress: 'Kilimani, Nairobi, Kenya',
+    shippingAddress: 'Block B, Apartment 12, Mikocheni, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't2', status: 'pending', timestamp: '2024-01-15T09:15:00Z', note: 'Order placed by customer' },
+      { id: 't3', status: 'processing', timestamp: '2024-01-15T11:00:00Z', note: 'Order confirmed and being prepared' },
+    ],
+    notes: [],
   },
   {
     id: '3',
     orderNumber: 'NBC-2024-003',
     customerName: 'Peter Ochieng',
     customerEmail: 'peter.o@email.com',
+    customerPhone: '+255 714 567 890',
     items: [
-      { id: '4', productName: 'Laptop Stand Adjustable', quantity: 1, price: 8500 },
-      { id: '5', productName: 'Wireless Mouse', quantity: 1, price: 2500 },
+      { id: '4', productName: 'Laptop Stand Adjustable', sku: 'LS-ADJ-SLV', quantity: 1, price: 8500 },
+      { id: '5', productName: 'Wireless Mouse', sku: 'WM-001-BLK', quantity: 1, price: 2500 },
     ],
-    total: 11000,
+    subtotal: 11000,
+    shippingCost: 3500,
+    total: 14500,
     status: 'shipped',
+    paymentStatus: 'paid',
+    paymentMethod: 'Credit Card',
     createdAt: '2024-01-14T16:45:00Z',
-    shippingAddress: 'Karen, Nairobi, Kenya',
+    shippingAddress: 'House 78, Oyster Bay, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't4', status: 'pending', timestamp: '2024-01-14T16:45:00Z', note: 'Order placed by customer' },
+      { id: 't5', status: 'processing', timestamp: '2024-01-14T18:00:00Z', note: 'Payment verified, preparing order' },
+      { id: 't6', status: 'shipped', timestamp: '2024-01-15T08:30:00Z', note: 'Order dispatched via DHL Express' },
+    ],
+    notes: [
+      { id: 'n2', content: 'Tracking number: DHL-TZ-123456', createdAt: '2024-01-15T08:35:00Z', author: 'Admin' },
+    ],
   },
   {
     id: '4',
     orderNumber: 'NBC-2024-004',
     customerName: 'Amina Hassan',
     customerEmail: 'amina.h@email.com',
+    customerPhone: '+255 715 678 901',
     items: [
-      { id: '6', productName: 'Smart Watch Band', quantity: 2, price: 1800 },
+      { id: '6', productName: 'Smart Watch Band', sku: 'SWB-001-SM', quantity: 2, price: 1800 },
     ],
-    total: 3600,
+    subtotal: 3600,
+    shippingCost: 2000,
+    total: 5600,
     status: 'delivered',
+    paymentStatus: 'paid',
+    paymentMethod: 'Mobile Money (Tigo Pesa)',
     createdAt: '2024-01-13T11:20:00Z',
-    shippingAddress: 'Mombasa Road, Nairobi, Kenya',
+    shippingAddress: 'Sinza Mori, Plot 23, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't7', status: 'pending', timestamp: '2024-01-13T11:20:00Z', note: 'Order placed by customer' },
+      { id: 't8', status: 'processing', timestamp: '2024-01-13T12:00:00Z', note: 'Order confirmed' },
+      { id: 't9', status: 'shipped', timestamp: '2024-01-13T16:00:00Z', note: 'Out for delivery' },
+      { id: 't10', status: 'delivered', timestamp: '2024-01-14T10:30:00Z', note: 'Delivered to customer' },
+    ],
+    notes: [
+      { id: 'n3', content: 'Customer confirmed receipt via phone', createdAt: '2024-01-14T10:45:00Z', author: 'Support' },
+    ],
   },
   {
     id: '5',
     orderNumber: 'NBC-2024-005',
     customerName: 'David Kamau',
     customerEmail: 'david.k@email.com',
+    customerPhone: '+255 716 789 012',
     items: [
-      { id: '7', productName: 'Portable Power Bank 20000mAh', quantity: 1, price: 6500 },
+      { id: '7', productName: 'Portable Power Bank 20000mAh', sku: 'PB-20K', quantity: 1, price: 6500 },
     ],
-    total: 6500,
+    subtotal: 6500,
+    shippingCost: 2500,
+    total: 9000,
     status: 'pending',
+    paymentStatus: 'unpaid',
+    paymentMethod: 'Cash on Delivery',
     createdAt: '2024-01-15T08:00:00Z',
-    shippingAddress: 'Lavington, Nairobi, Kenya',
+    shippingAddress: 'Mwenge, Kijitonyama, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't11', status: 'pending', timestamp: '2024-01-15T08:00:00Z', note: 'Order placed, awaiting payment' },
+    ],
+    notes: [],
+  },
+  {
+    id: '6',
+    orderNumber: 'NBC-2024-006',
+    customerName: 'Sarah Kimani',
+    customerEmail: 'sarah.k@email.com',
+    customerPhone: '+255 717 890 123',
+    items: [
+      { id: '8', productName: 'Wireless Bluetooth Headphones', sku: 'WBH-001-WHT', quantity: 1, price: 45000 },
+      { id: '9', productName: 'USB-C Charging Cable 2m', sku: 'USB-C2M', quantity: 2, price: 1500 },
+    ],
+    subtotal: 48000,
+    shippingCost: 0,
+    total: 48000,
+    status: 'completed',
+    paymentStatus: 'paid',
+    paymentMethod: 'Mobile Money (M-Pesa)',
+    createdAt: '2024-01-10T14:30:00Z',
+    shippingAddress: 'Upanga West, Flat 5A, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't12', status: 'pending', timestamp: '2024-01-10T14:30:00Z', note: 'Order placed by customer' },
+      { id: 't13', status: 'processing', timestamp: '2024-01-10T15:00:00Z', note: 'Payment confirmed' },
+      { id: 't14', status: 'shipped', timestamp: '2024-01-11T09:00:00Z', note: 'Order dispatched' },
+      { id: 't15', status: 'delivered', timestamp: '2024-01-11T16:00:00Z', note: 'Delivered successfully' },
+      { id: 't16', status: 'completed', timestamp: '2024-01-12T10:00:00Z', note: 'Order completed by customer' },
+    ],
+    notes: [
+      { id: 'n4', content: 'Free shipping applied (order over TZS 40,000)', createdAt: '2024-01-10T14:30:00Z', author: 'System' },
+      { id: 'n5', content: 'Customer left 5-star review', createdAt: '2024-01-12T11:00:00Z', author: 'System' },
+    ],
+  },
+  {
+    id: '7',
+    orderNumber: 'NBC-2024-007',
+    customerName: 'Michael Banda',
+    customerEmail: 'michael.b@email.com',
+    customerPhone: '+255 718 901 234',
+    items: [
+      { id: '10', productName: 'Laptop Stand Adjustable', sku: 'LS-ADJ-GRY', quantity: 2, price: 9000 },
+    ],
+    subtotal: 18000,
+    shippingCost: 4000,
+    total: 22000,
+    status: 'cancelled',
+    paymentStatus: 'unpaid',
+    paymentMethod: 'Bank Transfer',
+    createdAt: '2024-01-12T09:00:00Z',
+    shippingAddress: 'Mbezi Beach, Plot 156, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't17', status: 'pending', timestamp: '2024-01-12T09:00:00Z', note: 'Order placed, awaiting payment' },
+      { id: 't18', status: 'cancelled', timestamp: '2024-01-13T09:00:00Z', note: 'Order cancelled - payment not received within 24 hours' },
+    ],
+    notes: [
+      { id: 'n6', content: 'Customer notified about cancellation via email', createdAt: '2024-01-13T09:05:00Z', author: 'System' },
+    ],
+  },
+  {
+    id: '8',
+    orderNumber: 'NBC-2024-008',
+    customerName: 'Elizabeth Mwakasege',
+    customerEmail: 'elizabeth.m@email.com',
+    customerPhone: '+255 719 012 345',
+    items: [
+      { id: '11', productName: 'Smart Watch Band', sku: 'SWB-001-LG', quantity: 1, price: 1800 },
+      { id: '12', productName: 'Wireless Mouse', sku: 'WM-001-WHT', quantity: 1, price: 2500 },
+    ],
+    subtotal: 4300,
+    shippingCost: 2500,
+    total: 6800,
+    status: 'refunded',
+    paymentStatus: 'paid',
+    paymentMethod: 'Credit Card',
+    createdAt: '2024-01-08T10:00:00Z',
+    shippingAddress: 'Kariakoo, Street 45, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't19', status: 'pending', timestamp: '2024-01-08T10:00:00Z', note: 'Order placed by customer' },
+      { id: 't20', status: 'processing', timestamp: '2024-01-08T11:00:00Z', note: 'Payment confirmed' },
+      { id: 't21', status: 'shipped', timestamp: '2024-01-08T16:00:00Z', note: 'Order dispatched' },
+      { id: 't22', status: 'delivered', timestamp: '2024-01-09T12:00:00Z', note: 'Delivered to customer' },
+      { id: 't23', status: 'refunded', timestamp: '2024-01-11T14:00:00Z', note: 'Refund processed by platform admin - defective product' },
+    ],
+    notes: [
+      { id: 'n7', content: 'Customer reported defective mouse', createdAt: '2024-01-10T10:00:00Z', author: 'Support' },
+      { id: 'n8', content: 'Refund approved by admin', createdAt: '2024-01-11T13:00:00Z', author: 'Admin' },
+    ],
+  },
+  {
+    id: '9',
+    orderNumber: 'NBC-2024-009',
+    customerName: 'Joseph Mushi',
+    customerEmail: 'joseph.m@email.com',
+    customerPhone: '+255 720 123 456',
+    items: [
+      { id: '13', productName: 'Portable Power Bank 20000mAh', sku: 'PB-20K', quantity: 2, price: 6500 },
+      { id: '14', productName: 'USB-C Charging Cable 2m', sku: 'USB-C2M', quantity: 4, price: 1500 },
+    ],
+    subtotal: 19000,
+    shippingCost: 0,
+    total: 19000,
+    status: 'processing',
+    paymentStatus: 'paid',
+    paymentMethod: 'Mobile Money (Airtel Money)',
+    createdAt: '2024-01-15T07:30:00Z',
+    shippingAddress: 'Ilala, Buguruni, Street 12, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't24', status: 'pending', timestamp: '2024-01-15T07:30:00Z', note: 'Order placed by customer' },
+      { id: 't25', status: 'processing', timestamp: '2024-01-15T08:00:00Z', note: 'Payment verified, preparing order' },
+    ],
+    notes: [
+      { id: 'n9', content: 'Bulk order - free shipping applied', createdAt: '2024-01-15T07:30:00Z', author: 'System' },
+    ],
+  },
+  {
+    id: '10',
+    orderNumber: 'NBC-2024-010',
+    customerName: 'Rose Nyerere',
+    customerEmail: 'rose.n@email.com',
+    customerPhone: '+255 721 234 567',
+    items: [
+      { id: '15', productName: 'Wireless Bluetooth Headphones', sku: 'WBH-001-BLU', quantity: 1, price: 47000 },
+    ],
+    subtotal: 47000,
+    shippingCost: 0,
+    total: 47000,
+    status: 'pending',
+    paymentStatus: 'paid',
+    paymentMethod: 'Mobile Money (M-Pesa)',
+    createdAt: '2024-01-15T11:00:00Z',
+    shippingAddress: 'Msasani Peninsula, Villa 8, Dar es Salaam, Tanzania',
+    statusTimeline: [
+      { id: 't26', status: 'pending', timestamp: '2024-01-15T11:00:00Z', note: 'Order placed by customer' },
+    ],
+    notes: [],
   },
 ];
 
@@ -557,6 +793,19 @@ export const getOutOfStockProducts = (): Product[] => {
   return mockProducts.filter(p => p.stock === 0 && p.status !== 'archived');
 };
 
+// Order data accessor functions
+export const getOrderById = (id: string): Order | undefined => {
+  return mockOrders.find(o => o.id === id);
+};
+
+export const getOrdersByStatus = (status: OrderStatus): Order[] => {
+  return mockOrders.filter(o => o.status === status);
+};
+
+export const getOrdersByPaymentStatus = (paymentStatus: PaymentStatus): Order[] => {
+  return mockOrders.filter(o => o.paymentStatus === paymentStatus);
+};
+
 // Mock Store Info
 export const mockStoreInfo: StoreInfo = {
   id: 'store-001',
@@ -655,7 +904,7 @@ export const generateDailyStats = (days: number): DailyStats[] => {
 };
 
 // Helper functions
-export const getOrderStatusColor = (status: Order['status']) => {
+export const getOrderStatusColor = (status: OrderStatus): string => {
   switch (status) {
     case 'pending':
       return 'pending';
@@ -665,8 +914,23 @@ export const getOrderStatusColor = (status: Order['status']) => {
       return 'default';
     case 'delivered':
       return 'success';
+    case 'completed':
+      return 'success';
     case 'cancelled':
       return 'error';
+    case 'refunded':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
+};
+
+export const getPaymentStatusColor = (status: PaymentStatus): string => {
+  switch (status) {
+    case 'paid':
+      return 'success';
+    case 'unpaid':
+      return 'warning';
     default:
       return 'secondary';
   }
