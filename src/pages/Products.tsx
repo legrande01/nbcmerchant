@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ProductTable } from '@/components/products/ProductTable';
 import { ProductFilters } from '@/components/products/ProductFilters';
 import { BulkActionsBar } from '@/components/products/BulkActionsBar';
@@ -111,16 +113,26 @@ export default function Products() {
         </div>
 
         <TabsContent value="products" className="space-y-4 mt-4">
-          <ProductFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            categoryFilter={categoryFilter}
-            onCategoryChange={setCategoryFilter}
-            stockFilter={stockFilter}
-            onStockChange={setStockFilter}
-          />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <ProductFilters
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                statusFilter={statusFilter}
+                onStatusChange={setStatusFilter}
+                categoryFilter={categoryFilter}
+                onCategoryChange={setCategoryFilter}
+                stockFilter={stockFilter}
+                onStockChange={setStockFilter}
+              />
+            </div>
+            <Button asChild className="shrink-0">
+              <Link to="/products/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Link>
+            </Button>
+          </div>
 
           {selectedIds.length > 0 && (
             <BulkActionsBar
@@ -141,6 +153,14 @@ export default function Products() {
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Button asChild>
+              <Link to="/products/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Link>
+            </Button>
+          </div>
           <InventoryTable
             products={filteredProducts.filter(p => p.status !== 'archived')}
             onStockUpdate={handleStockUpdate}
