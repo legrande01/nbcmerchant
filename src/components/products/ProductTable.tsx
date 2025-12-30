@@ -59,15 +59,6 @@ export function ProductTable({
     }
   };
 
-  const getStockBadge = (product: Product) => {
-    if (product.stock === 0) {
-      return <Badge variant="error">Out of stock</Badge>;
-    }
-    if (product.stock <= product.inventory.lowStockThreshold) {
-      return <Badge variant="warning">Low stock</Badge>;
-    }
-    return <Badge variant="success">In stock</Badge>;
-  };
 
   if (isLoading) {
     return (
@@ -182,12 +173,7 @@ export function ProductTable({
                   )}
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{product.stock}</span>
-                  {getStockBadge(product)}
-                </div>
-              </TableCell>
+              <TableCell className="font-medium">{product.stock}</TableCell>
               <TableCell>
                 <Badge variant={getProductStatusColor(product.status) as any}>
                   {getProductStatusLabel(product.status)}
