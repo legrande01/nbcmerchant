@@ -9,6 +9,8 @@ import Orders from "@/pages/Orders";
 import OrderDetails from "@/pages/OrderDetails";
 import Products from "@/pages/Products";
 import NewProduct from "@/pages/NewProduct";
+import ProductDetail from "@/pages/ProductDetail";
+import EditProduct from "@/pages/EditProduct";
 import StoreManagement from "@/pages/StoreManagement";
 import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/orders/:id" element={<OrderDetails />} />
             <Route path="/products" element={<Products />} />
             <Route path="/products/new" element={<NewProduct />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/products/:id/edit" element={<EditProduct />} />
             <Route path="/store" element={<StoreManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/support" element={<Support />} />
