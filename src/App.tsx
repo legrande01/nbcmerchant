@@ -16,6 +16,7 @@ import Finance from "@/pages/Finance";
 import PayoutDetails from "@/pages/PayoutDetails";
 import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
+import Marketing from "@/pages/Marketing";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/store" element={<StoreManagement />} />
             <Route path="/finance" element={<Finance />} />
             <Route path="/finance/payouts/:id" element={<PayoutDetails />} />
+            <Route path="/marketing" element={<Marketing />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/support" element={<Support />} />
           </Route>

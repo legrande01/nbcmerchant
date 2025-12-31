@@ -36,7 +36,7 @@ const mainNavItems: NavItem[] = [
   { title: 'Products', href: '/products', icon: Package },
   { title: 'Orders', href: '/orders', icon: ShoppingCart },
   { title: 'Payments', href: '/finance', icon: CreditCard },
-  { title: 'Marketing', href: '/marketing', icon: Megaphone, disabled: true, tooltip: 'Coming soon' },
+  { title: 'Marketing', href: '/marketing', icon: Megaphone },
   { title: 'Reports', href: '/reports', icon: BarChart3, disabled: true, tooltip: 'Coming soon' },
 ];
 
