@@ -12,6 +12,8 @@ import NewProduct from "@/pages/NewProduct";
 import ProductDetail from "@/pages/ProductDetail";
 import EditProduct from "@/pages/EditProduct";
 import StoreManagement from "@/pages/StoreManagement";
+import Finance from "@/pages/Finance";
+import PayoutDetails from "@/pages/PayoutDetails";
 import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
 import NotFound from "@/pages/NotFound";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/products/:id/edit" element={<EditProduct />} />
             <Route path="/store" element={<StoreManagement />} />
+            <Route path="/finance" element={<Finance />} />
+            <Route path="/finance/payouts/:id" element={<PayoutDetails />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/support" element={<Support />} />
           </Route>
