@@ -5,15 +5,25 @@ import { RecentOrders } from '@/components/dashboard/RecentOrders';
 import { InventoryAlerts } from '@/components/dashboard/InventoryAlerts';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { NotificationsPanel } from '@/components/dashboard/NotificationsPanel';
-import { getDashboardData, formatCurrency } from '@/data/mockData';
+import { StoreStatusBanner } from '@/components/dashboard/StoreStatusBanner';
+import { NextPayoutCard } from '@/components/dashboard/NextPayoutCard';
+import { TaskChecklist } from '@/components/dashboard/TaskChecklist';
+import { FulfillmentQueue } from '@/components/dashboard/FulfillmentQueue';
+import { PerformanceTarget } from '@/components/dashboard/PerformanceTarget';
+import { CustomerReviews } from '@/components/dashboard/CustomerReviews';
+import { getDashboardData, getDashboardEnhancements, formatCurrency } from '@/data/mockData';
 
 export default function Dashboard() {
   const dashboardData = getDashboardData();
+  const enhancements = getDashboardEnhancements();
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Store Status Banner */}
+      <StoreStatusBanner storeStatus={enhancements.storeStatus} />
+
+      {/* KPI Cards + Next Payout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard
           title="Today's Orders"
           value={dashboardData.orders.todaysCount}
@@ -63,6 +73,7 @@ export default function Dashboard() {
           searchParams={{ status: 'pending' }}
           iconColor="bg-accent/10 text-accent"
         />
+        <NextPayoutCard payout={enhancements.nextPayout} />
       </div>
 
       {/* Main Content Grid */}
@@ -70,8 +81,17 @@ export default function Dashboard() {
         {/* Chart - Takes 2 columns */}
         <SalesChart className="lg:col-span-2" />
 
-        {/* Quick Actions */}
-        <QuickActions />
+        {/* Quick Actions + Performance Target */}
+        <div className="space-y-6">
+          <QuickActions />
+          <PerformanceTarget target={enhancements.revenueTarget} />
+        </div>
+      </div>
+
+      {/* Fulfillment & Task Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FulfillmentQueue alerts={enhancements.fulfillmentAlerts} />
+        <TaskChecklist items={enhancements.checklist} />
       </div>
 
       {/* Bottom Grid */}
@@ -81,6 +101,7 @@ export default function Dashboard() {
 
         {/* Right Column */}
         <div className="space-y-6">
+          <CustomerReviews reviews={enhancements.reviews} />
           <InventoryAlerts />
           <NotificationsPanel />
         </div>
