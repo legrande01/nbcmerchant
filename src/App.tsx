@@ -15,7 +15,7 @@ import StoreManagement from "@/pages/StoreManagement";
 import Finance from "@/pages/Finance";
 import PayoutDetails from "@/pages/PayoutDetails";
 import Settings from "@/pages/Settings";
-import Support from "@/pages/Support";
+
 import Marketing from "@/pages/Marketing";
 import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
@@ -43,7 +43,7 @@ const App = () => (
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/support" element={<Support />} />
+            
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

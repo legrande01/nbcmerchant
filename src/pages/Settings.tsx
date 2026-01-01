@@ -1,133 +1,88 @@
-import { User, Bell, Shield, Globe } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { useSearchParams } from 'react-router-dom';
+import { User, Shield, Bell, Store, HelpCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProfileAccount } from '@/components/settings/ProfileAccount';
+import { SecuritySettings } from '@/components/settings/SecuritySettings';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { StorePreferences } from '@/components/settings/StorePreferences';
+import { SupportHelp } from '@/components/settings/SupportHelp';
 
 export default function Settings() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'profile';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
-      {/* Account Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Account Settings
-          </CardTitle>
-          <CardDescription>
-            Manage your personal account information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" defaultValue="James Mwangi" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" defaultValue="james@techhub.co.ke" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input id="phone" defaultValue="+254 712 345 678" />
-          </div>
-          <Button>Update Account</Button>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">Manage your account, preferences, and security</p>
+      </div>
 
-      {/* Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notifications
-          </CardTitle>
-          <CardDescription>
-            Configure how you receive notifications
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Order Notifications</p>
-              <p className="text-sm text-muted-foreground">Get notified when you receive new orders</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Low Stock Alerts</p>
-              <p className="text-sm text-muted-foreground">Get alerts when products are running low</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Marketing Updates</p>
-              <p className="text-sm text-muted-foreground">Receive tips and updates from NBC Sokoni</p>
-            </div>
-            <Switch />
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-2 bg-transparent p-0">
+          <TabsTrigger 
+            value="profile" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Profile</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
+          >
+            <Shield className="h-4 w-4" />
+            <span className="hidden sm:inline">Security</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="notifications" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="preferences" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
+          >
+            <Store className="h-4 w-4" />
+            <span className="hidden sm:inline">Store</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="support" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Support</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Security */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Security
-          </CardTitle>
-          <CardDescription>
-            Keep your account secure
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <Input id="currentPassword" type="password" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="password" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input id="confirmPassword" type="password" />
-            </div>
-          </div>
-          <Button>Change Password</Button>
-        </CardContent>
-      </Card>
+        <div className="max-w-4xl">
+          <TabsContent value="profile" className="mt-0">
+            <ProfileAccount />
+          </TabsContent>
 
-      {/* Language & Region */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Language & Region
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Language</Label>
-              <Input defaultValue="English" disabled />
-            </div>
-            <div className="space-y-2">
-              <Label>Timezone</Label>
-              <Input defaultValue="Africa/Nairobi (EAT)" disabled />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <TabsContent value="security" className="mt-0">
+            <SecuritySettings />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-0">
+            <NotificationSettings />
+          </TabsContent>
+
+          <TabsContent value="preferences" className="mt-0">
+            <StorePreferences />
+          </TabsContent>
+
+          <TabsContent value="support" className="mt-0">
+            <SupportHelp />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
