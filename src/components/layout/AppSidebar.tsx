@@ -42,7 +42,6 @@ const mainNavItems: NavItem[] = [
 
 const bottomNavItems: NavItem[] = [
   { title: 'Settings', href: '/settings', icon: Settings },
-  { title: 'Support', href: '/support', icon: HelpCircle },
 ];
 
 interface AppSidebarProps {
