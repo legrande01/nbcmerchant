@@ -41,6 +41,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
+  { title: 'Help & Support', href: '/help', icon: HelpCircle },
   { title: 'Settings', href: '/settings', icon: Settings },
 ];
 

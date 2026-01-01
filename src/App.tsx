@@ -15,9 +15,9 @@ import StoreManagement from "@/pages/StoreManagement";
 import Finance from "@/pages/Finance";
 import PayoutDetails from "@/pages/PayoutDetails";
 import Settings from "@/pages/Settings";
-
 import Marketing from "@/pages/Marketing";
 import Reports from "@/pages/Reports";
+import Help from "@/pages/Help";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +42,7 @@ const App = () => (
             <Route path="/finance/payouts/:id" element={<PayoutDetails />} />
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/help" element={<Help />} />
             <Route path="/settings" element={<Settings />} />
             
           </Route>
