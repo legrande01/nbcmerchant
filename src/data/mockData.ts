@@ -1070,3 +1070,195 @@ export const getDashboardKPIs = () => {
     todayRevenue: data.sales.todaysRevenue,
   };
 };
+
+// ============= New Dashboard Enhancements =============
+
+export type StoreStatus = 'active' | 'pending_approval' | 'suspended' | 'action_required';
+
+export interface StoreStatusInfo {
+  status: StoreStatus;
+  message: string;
+  actionRequired?: {
+    reason: string;
+    ctaLabel: string;
+    ctaLink: string;
+  };
+}
+
+export interface NextPayoutInfo {
+  hasScheduledPayout: boolean;
+  nextPayoutDate?: string;
+  nextPayoutAmount?: number;
+}
+
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  link: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface FulfillmentAlert {
+  id: string;
+  type: 'awaiting_processing' | 'needs_label' | 'late_order';
+  count: number;
+  label: string;
+  link: string;
+  urgency: 'high' | 'medium' | 'low';
+}
+
+export interface RevenueTarget {
+  hasTarget: boolean;
+  targetAmount?: number;
+  currentAmount?: number;
+  month?: string;
+  percentComplete?: number;
+}
+
+export interface CustomerReview {
+  id: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  productName: string;
+  createdAt: string;
+}
+
+export interface DashboardEnhancements {
+  storeStatus: StoreStatusInfo;
+  nextPayout: NextPayoutInfo;
+  checklist: ChecklistItem[];
+  fulfillmentAlerts: FulfillmentAlert[];
+  revenueTarget: RevenueTarget;
+  reviews: CustomerReview[];
+}
+
+// Mock data for dashboard enhancements
+export const mockStoreStatus: StoreStatusInfo = {
+  status: 'active',
+  message: 'Your store is live and visible to customers.',
+};
+
+export const mockNextPayout: NextPayoutInfo = {
+  hasScheduledPayout: true,
+  nextPayoutDate: '2024-01-20',
+  nextPayoutAmount: 847500,
+};
+
+export const mockChecklist: ChecklistItem[] = [
+  {
+    id: 'chk-1',
+    title: 'Add your first product',
+    description: 'Start selling by adding products to your store',
+    completed: true,
+    link: '/products/new',
+    priority: 'high',
+  },
+  {
+    id: 'chk-2',
+    title: 'Upload store logo & banner',
+    description: 'Brand your store with custom images',
+    completed: false,
+    link: '/store?tab=branding',
+    priority: 'medium',
+  },
+  {
+    id: 'chk-3',
+    title: 'Create your first promotion',
+    description: 'Attract customers with discounts',
+    completed: false,
+    link: '/marketing',
+    priority: 'low',
+  },
+  {
+    id: 'chk-4',
+    title: 'Review low stock items',
+    description: 'Keep inventory updated to avoid stockouts',
+    completed: false,
+    link: '/products?stock=low',
+    priority: 'high',
+  },
+  {
+    id: 'chk-5',
+    title: 'Resolve pending orders',
+    description: 'Process orders waiting for action',
+    completed: false,
+    link: '/orders?status=pending',
+    priority: 'high',
+  },
+];
+
+export const mockFulfillmentAlerts: FulfillmentAlert[] = [
+  {
+    id: 'fa-1',
+    type: 'awaiting_processing',
+    count: 3,
+    label: 'Orders awaiting processing',
+    link: '/orders?status=pending',
+    urgency: 'high',
+  },
+  {
+    id: 'fa-2',
+    type: 'needs_label',
+    count: 2,
+    label: 'Orders needing shipping labels',
+    link: '/orders?status=processing',
+    urgency: 'medium',
+  },
+  {
+    id: 'fa-3',
+    type: 'late_order',
+    count: 1,
+    label: 'Late orders requiring attention',
+    link: '/orders?status=processing&late=true',
+    urgency: 'high',
+  },
+];
+
+export const mockRevenueTarget: RevenueTarget = {
+  hasTarget: true,
+  targetAmount: 5000000,
+  currentAmount: 3700000,
+  month: 'January',
+  percentComplete: 74,
+};
+
+export const mockCustomerReviews: CustomerReview[] = [
+  {
+    id: 'rev-1',
+    customerName: 'John M.',
+    rating: 5,
+    comment: 'Excellent quality headphones! Fast delivery and great customer service.',
+    productName: 'Wireless Bluetooth Headphones',
+    createdAt: '2024-01-14T10:30:00Z',
+  },
+  {
+    id: 'rev-2',
+    customerName: 'Grace W.',
+    rating: 4,
+    comment: 'Good value for money. The cable is sturdy and charges quickly.',
+    productName: 'USB-C Charging Cable 2m',
+    createdAt: '2024-01-13T15:45:00Z',
+  },
+  {
+    id: 'rev-3',
+    customerName: 'Peter O.',
+    rating: 5,
+    comment: 'Perfect laptop stand! Adjustable and very stable.',
+    productName: 'Laptop Stand Adjustable',
+    createdAt: '2024-01-12T09:20:00Z',
+  },
+];
+
+export const getDashboardEnhancements = (): DashboardEnhancements => {
+  return {
+    storeStatus: mockStoreStatus,
+    nextPayout: mockNextPayout,
+    checklist: mockChecklist,
+    fulfillmentAlerts: mockFulfillmentAlerts,
+    revenueTarget: mockRevenueTarget,
+    reviews: mockCustomerReviews,
+  };
+};
