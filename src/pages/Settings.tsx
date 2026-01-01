@@ -1,11 +1,10 @@
 import { useSearchParams } from 'react-router-dom';
-import { User, Shield, Bell, Store, HelpCircle } from 'lucide-react';
+import { User, Shield, Bell, Store } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileAccount } from '@/components/settings/ProfileAccount';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { StorePreferences } from '@/components/settings/StorePreferences';
-import { SupportHelp } from '@/components/settings/SupportHelp';
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,7 +22,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-2 bg-transparent p-0">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto gap-2 bg-transparent p-0">
           <TabsTrigger 
             value="profile" 
             className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
@@ -52,13 +51,6 @@ export default function Settings() {
             <Store className="h-4 w-4" />
             <span className="hidden sm:inline">Store</span>
           </TabsTrigger>
-          <TabsTrigger 
-            value="support" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"
-          >
-            <HelpCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Support</span>
-          </TabsTrigger>
         </TabsList>
 
         <div className="max-w-4xl">
@@ -76,10 +68,6 @@ export default function Settings() {
 
           <TabsContent value="preferences" className="mt-0">
             <StorePreferences />
-          </TabsContent>
-
-          <TabsContent value="support" className="mt-0">
-            <SupportHelp />
           </TabsContent>
         </div>
       </Tabs>
