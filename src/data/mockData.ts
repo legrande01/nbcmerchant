@@ -2,6 +2,21 @@
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
 export type PaymentStatus = 'paid' | 'unpaid';
+export type FulfilmentStatus = 'awaiting_pickup' | 'pickup_verification' | 'in_transit' | 'awaiting_buyer_confirmation' | 'delivered' | 'dispute';
+
+export interface FulfilmentVerification {
+  goodsImage: 'pending' | 'verified';
+  transporterId: 'pending' | 'verified';
+  transporterPhoto: 'pending' | 'verified';
+}
+
+export interface OrderFulfilment {
+  status: FulfilmentStatus;
+  transporterName?: string;
+  deliveredAt?: string;
+  disputeReason?: string;
+  verification?: FulfilmentVerification;
+}
 
 export interface OrderTimelineEntry {
   id: string;
@@ -34,6 +49,7 @@ export interface Order {
   shippingAddress: string;
   statusTimeline: OrderTimelineEntry[];
   notes: OrderNote[];
+  fulfilment?: OrderFulfilment;
 }
 
 export interface OrderItem {
@@ -229,6 +245,9 @@ export const mockOrders: Order[] = [
     notes: [
       { id: 'n1', content: 'Customer requested express delivery', createdAt: '2024-01-15T10:35:00Z', author: 'System' },
     ],
+    fulfilment: {
+      status: 'awaiting_pickup',
+    },
   },
   {
     id: '2',
@@ -252,6 +271,14 @@ export const mockOrders: Order[] = [
       { id: 't3', status: 'processing', timestamp: '2024-01-15T11:00:00Z', note: 'Order confirmed and being prepared' },
     ],
     notes: [],
+    fulfilment: {
+      status: 'pickup_verification',
+      verification: {
+        goodsImage: 'verified',
+        transporterId: 'pending',
+        transporterPhoto: 'pending',
+      },
+    },
   },
   {
     id: '3',
@@ -279,6 +306,10 @@ export const mockOrders: Order[] = [
     notes: [
       { id: 'n2', content: 'Tracking number: DHL-TZ-123456', createdAt: '2024-01-15T08:35:00Z', author: 'Admin' },
     ],
+    fulfilment: {
+      status: 'in_transit',
+      transporterName: 'DHL Express - James Kioko',
+    },
   },
   {
     id: '4',
@@ -306,6 +337,11 @@ export const mockOrders: Order[] = [
     notes: [
       { id: 'n3', content: 'Customer confirmed receipt via phone', createdAt: '2024-01-14T10:45:00Z', author: 'Support' },
     ],
+    fulfilment: {
+      status: 'delivered',
+      transporterName: 'Swift Delivery - Mary Okonkwo',
+      deliveredAt: '2024-01-14T10:30:00Z',
+    },
   },
   {
     id: '5',
@@ -358,6 +394,11 @@ export const mockOrders: Order[] = [
       { id: 'n4', content: 'Free shipping applied (order over TZS 40,000)', createdAt: '2024-01-10T14:30:00Z', author: 'System' },
       { id: 'n5', content: 'Customer left 5-star review', createdAt: '2024-01-12T11:00:00Z', author: 'System' },
     ],
+    fulfilment: {
+      status: 'delivered',
+      transporterName: 'Express Movers - John Kamau',
+      deliveredAt: '2024-01-11T16:00:00Z',
+    },
   },
   {
     id: '7',
@@ -413,6 +454,10 @@ export const mockOrders: Order[] = [
       { id: 'n7', content: 'Customer reported defective mouse', createdAt: '2024-01-10T10:00:00Z', author: 'Support' },
       { id: 'n8', content: 'Refund approved by admin', createdAt: '2024-01-11T13:00:00Z', author: 'Admin' },
     ],
+    fulfilment: {
+      status: 'dispute',
+      disputeReason: 'Customer claims product was defective upon delivery',
+    },
   },
   {
     id: '9',
@@ -439,6 +484,10 @@ export const mockOrders: Order[] = [
     notes: [
       { id: 'n9', content: 'Bulk order - free shipping applied', createdAt: '2024-01-15T07:30:00Z', author: 'System' },
     ],
+    fulfilment: {
+      status: 'awaiting_buyer_confirmation',
+      transporterName: 'Quick Logistics - Samuel Otieno',
+    },
   },
   {
     id: '10',
@@ -461,6 +510,9 @@ export const mockOrders: Order[] = [
       { id: 't26', status: 'pending', timestamp: '2024-01-15T11:00:00Z', note: 'Order placed by customer' },
     ],
     notes: [],
+    fulfilment: {
+      status: 'awaiting_pickup',
+    },
   },
 ];
 
