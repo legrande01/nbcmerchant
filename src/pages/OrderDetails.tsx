@@ -9,7 +9,8 @@ import { OrderItems } from '@/components/orders/OrderItems';
 import { OrderCustomerInfo } from '@/components/orders/OrderCustomerInfo';
 import { OrderStatusUpdate } from '@/components/orders/OrderStatusUpdate';
 import { OrderNotes } from '@/components/orders/OrderNotes';
-import { mockOrders, Order, OrderStatus, orderStatusLabels } from '@/data/mockData';
+import { OrderFulfilment } from '@/components/orders/OrderFulfilment';
+import { mockOrders, Order, OrderStatus, orderStatusLabels, OrderFulfilment as OrderFulfilmentType, FulfilmentStatus } from '@/data/mockData';
 
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +80,31 @@ export default function OrderDetails() {
     });
   };
 
+  const handleConfirmPickup = () => {
+    if (!order.fulfilment) return;
+    
+    setOrder((prev) => {
+      if (!prev || !prev.fulfilment) return prev;
+      return {
+        ...prev,
+        fulfilment: {
+          ...prev.fulfilment,
+          status: 'pickup_verification' as FulfilmentStatus,
+          verification: {
+            goodsImage: 'pending',
+            transporterId: 'pending',
+            transporterPhoto: 'pending',
+          },
+        },
+      };
+    });
+
+    toast({
+      title: 'Pickup Initiated',
+      description: 'Waiting for transporter verification...',
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -111,9 +137,15 @@ export default function OrderDetails() {
           <OrderStatusTimeline timeline={order.statusTimeline} currentStatus={order.status} />
         </div>
 
-        {/* Right Column - Customer, Status Update, Notes */}
+        {/* Right Column - Customer, Fulfilment, Status Update, Notes */}
         <div className="space-y-6">
           <OrderCustomerInfo order={order} />
+          {order.paymentStatus === 'paid' && order.fulfilment && (
+            <OrderFulfilment 
+              fulfilment={order.fulfilment} 
+              onConfirmPickup={handleConfirmPickup}
+            />
+          )}
           <OrderStatusUpdate currentStatus={order.status} onStatusUpdate={handleStatusUpdate} />
           <OrderNotes notes={order.notes} onAddNote={handleAddNote} />
         </div>
