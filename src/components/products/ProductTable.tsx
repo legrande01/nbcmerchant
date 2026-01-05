@@ -163,16 +163,7 @@ export function ProductTable({
                 </div>
               </TableCell>
               <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-              <TableCell>
-                <div>
-                  <p className="font-medium">{formatCurrency(product.price)}</p>
-                  {product.compareAtPrice && (
-                    <p className="text-sm text-muted-foreground line-through">
-                      {formatCurrency(product.compareAtPrice)}
-                    </p>
-                  )}
-                </div>
-              </TableCell>
+              <TableCell className="font-medium">{formatCurrency(product.price)}</TableCell>
               <TableCell className="font-medium">{product.stock}</TableCell>
               <TableCell>
                 <Badge variant={getProductStatusColor(product.status) as any}>
