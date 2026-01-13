@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Package, 
-  MapPin, 
   Navigation, 
   Phone,
   Clock,
-  ChevronRight,
   Filter,
   Search,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,21 +30,36 @@ import {
   DriverDelivery,
   DriverDeliveryStatus,
 } from '@/data/driverData';
+import { DeliveryTimeline } from '@/components/driver/DeliveryTimeline';
+import { useDelivery } from '@/contexts/DeliveryContext';
 
-const statusConfig: Record<DriverDeliveryStatus, { label: string; variant: string; color: string }> = {
-  awaiting_pickup: { label: 'Awaiting Pickup', variant: 'pending', color: 'border-l-amber-500' },
-  in_transit: { label: 'In Transit', variant: 'info', color: 'border-l-blue-500' },
-  awaiting_buyer_confirmation: { label: 'Awaiting Confirmation', variant: 'secondary', color: 'border-l-purple-500' },
-  delivered: { label: 'Delivered', variant: 'success', color: 'border-l-green-500' },
-  dispute: { label: 'Dispute', variant: 'destructive', color: 'border-l-destructive' },
+const statusConfig: Record<DriverDeliveryStatus, { label: string; variant: string; bgColor: string }> = {
+  awaiting_pickup: { label: 'Awaiting Pickup', variant: 'default', bgColor: 'bg-blue-500' },
+  in_transit: { label: 'In Transit', variant: 'pending', bgColor: 'bg-orange-500' },
+  awaiting_buyer_confirmation: { label: 'Awaiting Confirmation', variant: 'secondary', bgColor: 'bg-purple-500' },
+  delivered: { label: 'Delivered', variant: 'success', bgColor: 'bg-green-500' },
+  dispute: { label: 'Dispute', variant: 'destructive', bgColor: 'bg-destructive' },
 };
+
+// Status pill component for clean list display
+function StatusPill({ status }: { status: DriverDeliveryStatus }) {
+  const config = statusConfig[status];
+  return (
+    <span className={cn(
+      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white',
+      config.bgColor
+    )}>
+      {config.label}
+    </span>
+  );
+}
 
 export default function DriverDeliveries() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { selectedDelivery, setSelectedDelivery } = useDelivery();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
-  const [selectedDelivery, setSelectedDelivery] = useState<DriverDelivery | null>(null);
 
   // Filter deliveries
   const filteredDeliveries = mockDriverDeliveries.filter(delivery => {
@@ -99,7 +113,6 @@ export default function DriverDeliveries() {
   };
 
   const handleNavigate = () => {
-    // In a real app, this would open Google Maps or similar
     if (selectedDelivery) {
       const { dropoffCoords } = selectedDelivery.route;
       window.open(
@@ -109,6 +122,7 @@ export default function DriverDeliveries() {
     }
   };
 
+  // State-driven action buttons
   const renderActionButton = (delivery: DriverDelivery) => {
     switch (delivery.status) {
       case 'awaiting_pickup':
@@ -121,13 +135,44 @@ export default function DriverDeliveries() {
         return (
           <Button onClick={handleNavigate} className="w-full">
             <Navigation className="h-4 w-4 mr-2" />
-            Navigate
+            Navigate to Customer
           </Button>
         );
+      case 'awaiting_buyer_confirmation':
+        return (
+          <Button disabled className="w-full" variant="secondary">
+            Waiting for Customer
+          </Button>
+        );
+      case 'dispute':
+        return (
+          <Button disabled className="w-full" variant="destructive">
+            Under Dispute
+          </Button>
+        );
+      case 'delivered':
       default:
         return null;
     }
   };
+
+  // Map highlight logic based on status
+  const getMapHighlight = (status: DriverDeliveryStatus) => {
+    switch (status) {
+      case 'awaiting_pickup':
+        return { pickup: true, route: false, dropoff: false };
+      case 'in_transit':
+        return { pickup: false, route: true, dropoff: true };
+      case 'awaiting_buyer_confirmation':
+      case 'delivered':
+      case 'dispute':
+        return { pickup: false, route: false, dropoff: true };
+      default:
+        return { pickup: true, route: false, dropoff: false };
+    }
+  };
+
+  const mapHighlight = selectedDelivery ? getMapHighlight(selectedDelivery.status) : null;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
@@ -178,27 +223,26 @@ export default function DriverDeliveries() {
                     <div
                       key={delivery.id}
                       className={cn(
-                        'p-4 cursor-pointer transition-colors border-l-4',
-                        statusConfig[delivery.status].color,
+                        'p-4 cursor-pointer transition-colors',
                         selectedDelivery?.id === delivery.id 
-                          ? 'bg-accent' 
+                          ? 'bg-primary/10' 
                           : 'hover:bg-muted/50'
                       )}
                       onClick={() => handleDeliverySelect(delivery)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-medium">{delivery.orderNumber}</p>
-                          <p className="text-sm text-muted-foreground">{delivery.merchantName}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{delivery.orderNumber}</p>
+                          <p className="text-sm text-muted-foreground truncate">{delivery.merchantName}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-green-600 ml-2">
+                          {formatCurrency(delivery.estimatedPayout)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <Badge variant={statusConfig[delivery.status].variant as any} className="text-xs">
-                          {statusConfig[delivery.status].label}
-                        </Badge>
-                        <span className="text-sm font-medium text-green-600">
-                          {formatCurrency(delivery.estimatedPayout)}
+                        <StatusPill status={delivery.status} />
+                        <span className="text-xs text-muted-foreground">
+                          {delivery.route.distance}
                         </span>
                       </div>
                     </div>
@@ -211,9 +255,20 @@ export default function DriverDeliveries() {
       </div>
 
       {/* Right Panel - Delivery Details */}
-      <div className="flex-1 flex flex-col gap-4">
+      <div className="flex-1 flex flex-col gap-4 overflow-auto">
         {selectedDelivery ? (
           <>
+            {/* Dispute Warning Banner */}
+            {selectedDelivery.status === 'dispute' && (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div>
+                  <p className="font-medium text-destructive">This delivery is under dispute</p>
+                  <p className="text-sm text-muted-foreground">No actions are allowed until the dispute is resolved.</p>
+                </div>
+              </div>
+            )}
+
             {/* Delivery Info Card */}
             <Card>
               <CardHeader className="pb-3">
@@ -224,9 +279,7 @@ export default function DriverDeliveries() {
                       Assigned {new Date(selectedDelivery.assignedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant={statusConfig[selectedDelivery.status].variant as any} className="text-sm">
-                    {statusConfig[selectedDelivery.status].label}
-                  </Badge>
+                  <StatusPill status={selectedDelivery.status} />
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -296,16 +349,6 @@ export default function DriverDeliveries() {
                   </span>
                 </div>
 
-                {/* Dispute Notice */}
-                {selectedDelivery.status === 'dispute' && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                    <p className="font-medium text-destructive">Order Under Dispute</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedDelivery.proof.rejectionReason || 'This order is under review. Resolution in progress.'}
-                    </p>
-                  </div>
-                )}
-
                 {/* Awaiting Confirmation Notice */}
                 {selectedDelivery.status === 'awaiting_buyer_confirmation' && (
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -321,8 +364,23 @@ export default function DriverDeliveries() {
               </CardContent>
             </Card>
 
+            {/* Delivery Journey Timeline */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Delivery Journey</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DeliveryTimeline 
+                  status={selectedDelivery.status}
+                  assignedAt={selectedDelivery.assignedAt}
+                  pickedUpAt={selectedDelivery.pickedUpAt}
+                  deliveredAt={selectedDelivery.deliveredAt}
+                />
+              </CardContent>
+            </Card>
+
             {/* Map Card */}
-            <Card className="flex-1">
+            <Card className="flex-1 min-h-[200px]">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Route Map</CardTitle>
@@ -347,8 +405,14 @@ export default function DriverDeliveries() {
                   <div className="absolute inset-4 flex items-center justify-center">
                     <div className="relative w-full h-full">
                       {/* Pickup marker */}
-                      <div className="absolute top-4 left-8 flex items-center gap-2">
-                        <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" />
+                      <div className={cn(
+                        "absolute top-4 left-8 flex items-center gap-2 transition-opacity",
+                        mapHighlight?.pickup ? 'opacity-100' : 'opacity-50'
+                      )}>
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border-2 border-white shadow-lg",
+                          mapHighlight?.pickup ? 'bg-green-500 ring-2 ring-green-300' : 'bg-green-500'
+                        )} />
                         <span className="text-xs bg-white px-2 py-1 rounded shadow">Pickup</span>
                       </div>
                       
@@ -356,16 +420,22 @@ export default function DriverDeliveries() {
                       <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
                         <path
                           d="M 48 32 Q 200 100 280 180"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="2"
-                          strokeDasharray="8 4"
+                          stroke={mapHighlight?.route ? 'hsl(var(--primary))' : '#ccc'}
+                          strokeWidth={mapHighlight?.route ? '3' : '2'}
+                          strokeDasharray={mapHighlight?.route ? '0' : '8 4'}
                           fill="none"
                         />
                       </svg>
                       
                       {/* Dropoff marker */}
-                      <div className="absolute bottom-4 right-8 flex items-center gap-2">
-                        <div className="w-4 h-4 bg-primary rounded-full border-2 border-white shadow-lg" />
+                      <div className={cn(
+                        "absolute bottom-4 right-8 flex items-center gap-2 transition-opacity",
+                        mapHighlight?.dropoff ? 'opacity-100' : 'opacity-50'
+                      )}>
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border-2 border-white shadow-lg",
+                          mapHighlight?.dropoff ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
+                        )} />
                         <span className="text-xs bg-white px-2 py-1 rounded shadow">Drop-off</span>
                       </div>
                     </div>

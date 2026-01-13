@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Camera, 
@@ -10,6 +10,10 @@ import {
   User,
   CreditCard,
   Image,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+  Truck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +22,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { getDeliveryById, DriverDelivery } from '@/data/driverData';
+import { 
+  getDeliveryById, 
+  DriverDelivery, 
+  mockDriverDeliveries,
+  DriverDeliveryStatus,
+} from '@/data/driverData';
+import { useDelivery } from '@/contexts/DeliveryContext';
 import { toast } from '@/hooks/use-toast';
 
 type VerificationType = 'pickup' | 'delivery';
@@ -80,18 +91,179 @@ const getDeliverySteps = (): VerificationStep[] => [
 ];
 
 const proofStatusConfig: Record<string, { label: string; variant: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pending Review', variant: 'pending', icon: null },
+  pending: { label: 'Pending Review', variant: 'pending', icon: <Clock className="h-4 w-4" /> },
   approved: { label: 'Approved', variant: 'success', icon: <CheckCircle2 className="h-4 w-4" /> },
   rejected: { label: 'Rejected', variant: 'destructive', icon: <XCircle className="h-4 w-4" /> },
 };
 
+// Proof Timeline Component
+function ProofTimeline({ delivery }: { delivery: DriverDelivery }) {
+  const steps = [
+    { 
+      label: 'Proof Submitted', 
+      completed: delivery.proof.pickupVerified,
+      time: delivery.pickedUpAt 
+    },
+    { 
+      label: delivery.proof.proofStatus === 'approved' ? 'Approved' : 
+             delivery.proof.proofStatus === 'rejected' ? 'Rejected' : 'Pending Review',
+      completed: delivery.proof.proofStatus !== 'pending',
+      isError: delivery.proof.proofStatus === 'rejected',
+      time: null
+    },
+    { 
+      label: 'Buyer Confirmed', 
+      completed: delivery.proof.deliveryVerified,
+      time: delivery.deliveredAt 
+    },
+    { 
+      label: 'Delivery Proof Uploaded', 
+      completed: !!delivery.proof.deliveryPhoto,
+      time: null
+    },
+  ];
+
+  return (
+    <div className="space-y-0">
+      {steps.map((step, index) => (
+        <div key={step.label} className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <div
+              className={cn(
+                'w-5 h-5 rounded-full flex items-center justify-center shrink-0',
+                step.completed && !step.isError && 'bg-green-500 text-white',
+                step.completed && step.isError && 'bg-destructive text-white',
+                !step.completed && 'bg-muted text-muted-foreground'
+              )}
+            >
+              {step.completed ? (
+                step.isError ? <XCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />
+              ) : (
+                <Clock className="h-3 w-3" />
+              )}
+            </div>
+            {index < steps.length - 1 && (
+              <div className={cn(
+                'w-0.5 h-6 my-1',
+                step.completed ? (step.isError ? 'bg-destructive' : 'bg-green-500') : 'bg-muted'
+              )} />
+            )}
+          </div>
+          <div className="pb-3">
+            <p className={cn(
+              'text-sm font-medium',
+              step.completed && !step.isError && 'text-green-700',
+              step.completed && step.isError && 'text-destructive',
+              !step.completed && 'text-muted-foreground'
+            )}>
+              {step.label}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Status pill for list items
+function StatusPill({ status }: { status: DriverDeliveryStatus }) {
+  const statusConfig: Record<DriverDeliveryStatus, { label: string; bgColor: string }> = {
+    awaiting_pickup: { label: 'Awaiting Pickup', bgColor: 'bg-blue-500' },
+    in_transit: { label: 'In Transit', bgColor: 'bg-orange-500' },
+    awaiting_buyer_confirmation: { label: 'Awaiting Confirmation', bgColor: 'bg-purple-500' },
+    delivered: { label: 'Delivered', bgColor: 'bg-green-500' },
+    dispute: { label: 'Dispute', bgColor: 'bg-destructive' },
+  };
+  const config = statusConfig[status];
+  return (
+    <span className={cn(
+      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white',
+      config.bgColor
+    )}>
+      {config.label}
+    </span>
+  );
+}
+
+// Delivery selection list component
+function DeliverySelectionList({ 
+  deliveries, 
+  onSelect 
+}: { 
+  deliveries: DriverDelivery[];
+  onSelect: (delivery: DriverDelivery) => void;
+}) {
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 rounded-full text-primary">
+              <Truck className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle>Select a Delivery</CardTitle>
+              <CardDescription>Choose an active delivery to manage proof and verification</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-2">
+              {deliveries.map((delivery) => (
+                <div
+                  key={delivery.id}
+                  onClick={() => onSelect(delivery)}
+                  className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium">{delivery.orderNumber}</p>
+                      <p className="text-sm text-muted-foreground">{delivery.merchantName}</p>
+                    </div>
+                    <StatusPill status={delivery.status} />
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span>{delivery.route.distance}</span>
+                    <span>•</span>
+                    <span>{delivery.customerName}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function DriverVerification() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { selectedDelivery, setSelectedDelivery, activeDeliveries, getDeliveryById: getDelivery } = useDelivery();
+  
   const deliveryId = searchParams.get('delivery');
   const verificationType = (searchParams.get('type') || 'pickup') as VerificationType;
   
-  const delivery = deliveryId ? getDeliveryById(deliveryId) : null;
+  // Get delivery from URL param or context
+  const [delivery, setDelivery] = useState<DriverDelivery | null>(null);
+  
+  useEffect(() => {
+    if (deliveryId) {
+      const found = getDeliveryById(deliveryId);
+      if (found) {
+        setDelivery(found);
+        setSelectedDelivery(found);
+      }
+    } else if (selectedDelivery) {
+      setDelivery(selectedDelivery);
+      setSearchParams(prev => {
+        prev.set('delivery', selectedDelivery.id);
+        return prev;
+      });
+    }
+  }, [deliveryId, selectedDelivery]);
   
   const [steps, setSteps] = useState<VerificationStep[]>(
     verificationType === 'pickup' ? getPickupSteps() : getDeliverySteps()
@@ -100,14 +272,31 @@ export default function DriverVerification() {
   const [pickupCode, setPickupCode] = useState('');
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, boolean>>({});
 
+  // Handle delivery selection from list
+  const handleSelectDelivery = (selected: DriverDelivery) => {
+    setDelivery(selected);
+    setSelectedDelivery(selected);
+    setSearchParams(prev => {
+      prev.set('delivery', selected.id);
+      return prev;
+    });
+  };
+
+  // If no delivery and no selection, show list of active deliveries
+  if (!delivery && activeDeliveries.length > 0) {
+    return <DeliverySelectionList deliveries={activeDeliveries} onSelect={handleSelectDelivery} />;
+  }
+
+  // If still no delivery (no active deliveries)
   if (!delivery) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Card className="p-6 text-center">
-          <p className="text-muted-foreground">Delivery not found</p>
+        <Card className="p-6 text-center max-w-md">
+          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-lg font-medium mb-2">No Active Deliveries</p>
+          <p className="text-muted-foreground mb-4">You don't have any active deliveries to verify.</p>
           <Button 
             variant="outline" 
-            className="mt-4"
             onClick={() => navigate('/driver/deliveries')}
           >
             Back to Deliveries
@@ -120,6 +309,8 @@ export default function DriverVerification() {
   const progress = (steps.filter(s => s.completed).length / steps.length) * 100;
   const currentStepData = steps[currentStep];
   const allCompleted = steps.every(s => s.completed);
+  const isDispute = delivery.status === 'dispute';
+  const isReadOnly = isDispute || delivery.status === 'delivered';
 
   const handleCodeSubmit = () => {
     if (pickupCode.length === 4) {
@@ -137,7 +328,6 @@ export default function DriverVerification() {
   };
 
   const handlePhotoUpload = (stepId: string) => {
-    // Simulate photo upload
     setUploadedPhotos(prev => ({ ...prev, [stepId]: true }));
     
     const updatedSteps = [...steps];
@@ -167,8 +357,8 @@ export default function DriverVerification() {
     navigate(`/driver/deliveries?selected=${delivery.id}`);
   };
 
-  // Show read-only view for already verified or disputed deliveries
-  if (delivery.status === 'dispute' || delivery.status === 'delivered') {
+  // Show read-only view for disputed or delivered orders
+  if (isReadOnly) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Button
@@ -179,6 +369,17 @@ export default function DriverVerification() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Delivery
         </Button>
+
+        {/* Dispute Warning */}
+        {isDispute && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+            <div>
+              <p className="font-medium text-destructive">This delivery is under dispute</p>
+              <p className="text-sm text-muted-foreground">Proof verification is read-only until the dispute is resolved.</p>
+            </div>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -233,10 +434,28 @@ export default function DriverVerification() {
                 {delivery.proof.deliveryVerified ? (
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                 ) : (
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="text-sm">
+                  Buyer Confirmation: {delivery.proof.deliveryVerified ? 'Confirmed' : 'Pending'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                {delivery.proof.deliveryPhoto ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                ) : (
                   <XCircle className="h-4 w-4 text-muted-foreground" />
                 )}
                 <span className="text-sm">Delivery Photo</span>
               </div>
+            </div>
+
+            <Separator />
+
+            {/* Proof Timeline */}
+            <div className="space-y-3">
+              <h4 className="font-medium">Proof Timeline</h4>
+              <ProofTimeline delivery={delivery} />
             </div>
           </CardContent>
         </Card>
