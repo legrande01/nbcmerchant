@@ -67,13 +67,13 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <RoleProvider>
+      <RoleProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <AppRoutes />
-        </RoleProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </RoleProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
