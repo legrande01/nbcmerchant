@@ -1,10 +1,6 @@
-// This file is kept for backward compatibility but now uses AuthContext
-// All role functionality is now handled by AuthContext with real backend validation
+import { createContext, useContext, useState, ReactNode } from 'react';
 
-import { createContext, useContext, ReactNode } from 'react';
-import { useAuth, AppRole } from '@/contexts/AuthContext';
-
-export type UserRole = AppRole;
+export type UserRole = 'merchant' | 'driver';
 
 interface User {
   id: string;
@@ -15,31 +11,81 @@ interface User {
 }
 
 interface RoleContextType {
-  user: User;
+  user: User | null;
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
   hasMultipleRoles: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-export function RoleProvider({ children }: { children: ReactNode }) {
-  const { user: authUser, profile, roles, currentRole, setCurrentRole, hasMultipleRoles } = useAuth();
+// Dummy users for demo
+const dummyUsers: Record<string, { password: string; user: User }> = {
+  'merchant@demo.com': {
+    password: 'demo123',
+    user: {
+      id: 'user-1',
+      name: 'James Kioko',
+      email: 'merchant@demo.com',
+      roles: ['merchant'],
+    },
+  },
+  'driver@demo.com': {
+    password: 'demo123',
+    user: {
+      id: 'user-2',
+      name: 'Sarah Mwangi',
+      email: 'driver@demo.com',
+      roles: ['driver'],
+    },
+  },
+  'admin@demo.com': {
+    password: 'demo123',
+    user: {
+      id: 'user-3',
+      name: 'Admin User',
+      email: 'admin@demo.com',
+      roles: ['merchant', 'driver'], // Has both roles
+    },
+  },
+};
 
-  // Transform auth user to legacy format for backward compatibility
-  const user: User = {
-    id: authUser?.id || 'anonymous',
-    name: profile?.full_name || authUser?.email?.split('@')[0] || 'Guest',
-    email: authUser?.email || '',
-    roles: roles as UserRole[],
-    avatar: profile?.avatar_url || undefined,
+export function RoleProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [currentRole, setCurrentRole] = useState<UserRole>('merchant');
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const dummyUser = dummyUsers[email.toLowerCase()];
+    
+    if (!dummyUser) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    if (dummyUser.password !== password) {
+      return { success: false, error: 'Invalid password' };
+    }
+    
+    setUser(dummyUser.user);
+    setCurrentRole(dummyUser.user.roles[0]);
+    return { success: true };
+  };
+
+  const logout = () => {
+    setUser(null);
+    setCurrentRole('merchant');
   };
 
   const value: RoleContextType = {
     user,
-    currentRole: currentRole as UserRole,
-    setCurrentRole: setCurrentRole as (role: UserRole) => void,
-    hasMultipleRoles,
+    currentRole,
+    setCurrentRole,
+    hasMultipleRoles: (user?.roles.length ?? 0) > 1,
+    isAuthenticated: !!user,
+    login,
+    logout,
   };
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

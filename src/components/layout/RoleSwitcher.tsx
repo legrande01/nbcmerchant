@@ -1,4 +1,4 @@
-import { Store, Truck, ChevronDown, Check, Shield } from 'lucide-react';
+import { Store, Truck, ChevronDown, Check } from 'lucide-react';
 import { useRole, UserRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,17 +19,13 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ComponentType<{ 
     label: 'Driver',
     icon: Truck,
   },
-  admin: {
-    label: 'Admin',
-    icon: Shield,
-  },
 };
 
 export function RoleSwitcher() {
   const { currentRole, setCurrentRole, hasMultipleRoles, user } = useRole();
   const navigate = useNavigate();
 
-  if (!hasMultipleRoles) {
+  if (!hasMultipleRoles || !user) {
     return null;
   }
 
@@ -37,7 +33,6 @@ export function RoleSwitcher() {
 
   const handleRoleSwitch = (role: UserRole) => {
     setCurrentRole(role);
-    // Navigate to the appropriate dashboard
     navigate('/');
   };
 

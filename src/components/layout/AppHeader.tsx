@@ -12,7 +12,7 @@ import {
 import { mockNotifications } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { RoleSwitcher } from './RoleSwitcher';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRole } from '@/contexts/RoleContext';
 import { useNavigate } from 'react-router-dom';
 
 interface AppHeaderProps {
@@ -22,15 +22,15 @@ interface AppHeaderProps {
 
 export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) {
   const unreadCount = mockNotifications.filter(n => !n.read).length;
-  const { user, profile, signOut } = useAuth();
+  const { user, logout } = useRole();
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    logout();
     navigate('/auth');
   };
 
-  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayName = user?.name || 'User';
   const displayEmail = user?.email || '';
 
   return (
