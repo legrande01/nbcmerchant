@@ -1,6 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+// This file is kept for backward compatibility but now uses AuthContext
+// All role functionality is now handled by AuthContext with real backend validation
 
-export type UserRole = 'merchant' | 'driver';
+import { createContext, useContext, ReactNode } from 'react';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
+
+export type UserRole = AppRole;
 
 interface User {
   id: string;
@@ -19,22 +23,23 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Mock user with multiple roles for demonstration
-const mockUser: User = {
-  id: 'user-1',
-  name: 'James Kioko',
-  email: 'james.kioko@email.com',
-  roles: ['merchant', 'driver'], // User has both roles
-};
-
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<UserRole>(mockUser.roles[0]);
+  const { user: authUser, profile, roles, currentRole, setCurrentRole, hasMultipleRoles } = useAuth();
+
+  // Transform auth user to legacy format for backward compatibility
+  const user: User = {
+    id: authUser?.id || 'anonymous',
+    name: profile?.full_name || authUser?.email?.split('@')[0] || 'Guest',
+    email: authUser?.email || '',
+    roles: roles as UserRole[],
+    avatar: profile?.avatar_url || undefined,
+  };
 
   const value: RoleContextType = {
-    user: mockUser,
-    currentRole,
-    setCurrentRole,
-    hasMultipleRoles: mockUser.roles.length > 1,
+    user,
+    currentRole: currentRole as UserRole,
+    setCurrentRole: setCurrentRole as (role: UserRole) => void,
+    hasMultipleRoles,
   };
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

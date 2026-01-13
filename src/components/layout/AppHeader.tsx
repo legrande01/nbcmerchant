@@ -1,4 +1,4 @@
-import { Bell, Menu, Search, User } from 'lucide-react';
+import { Bell, Menu, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,9 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { mockNotifications, mockStoreInfo } from '@/data/mockData';
+import { mockNotifications } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { RoleSwitcher } from './RoleSwitcher';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface AppHeaderProps {
   onMenuClick: () => void;
@@ -20,6 +22,16 @@ interface AppHeaderProps {
 
 export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) {
   const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = user?.email || '';
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
@@ -95,17 +107,24 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{mockStoreInfo.name}</span>
+                <span>{displayName}</span>
                 <span className="text-xs font-normal text-muted-foreground">
-                  {mockStoreInfo.email}
+                  {displayEmail}
                 </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-            <DropdownMenuItem>Store Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Profile Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/store')}>
+              Store Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Log Out</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Log Out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
