@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,7 +11,9 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Menu,
+  Truck,
+  ClipboardCheck,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useRole } from '@/contexts/RoleContext';
 
 interface NavItem {
   title: string;
@@ -30,7 +32,7 @@ interface NavItem {
   tooltip?: string;
 }
 
-const mainNavItems: NavItem[] = [
+const merchantMainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/', icon: LayoutDashboard },
   { title: 'Store Management', href: '/store', icon: Store },
   { title: 'Products', href: '/products', icon: Package },
@@ -40,7 +42,19 @@ const mainNavItems: NavItem[] = [
   { title: 'Reports', href: '/reports', icon: BarChart3 },
 ];
 
-const bottomNavItems: NavItem[] = [
+const driverMainNavItems: NavItem[] = [
+  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { title: 'Deliveries', href: '/driver/deliveries', icon: Truck },
+  { title: 'Verification', href: '/driver/verification', icon: ClipboardCheck },
+  { title: 'Profile', href: '/driver/profile', icon: User },
+];
+
+const merchantBottomNavItems: NavItem[] = [
+  { title: 'Help & Support', href: '/help', icon: HelpCircle },
+  { title: 'Settings', href: '/settings', icon: Settings },
+];
+
+const driverBottomNavItems: NavItem[] = [
   { title: 'Help & Support', href: '/help', icon: HelpCircle },
   { title: 'Settings', href: '/settings', icon: Settings },
 ];
@@ -54,6 +68,11 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed, onToggle, isMobile, onMobileClose }: AppSidebarProps) {
   const location = useLocation();
+  const { currentRole } = useRole();
+  
+  const mainNavItems = currentRole === 'driver' ? driverMainNavItems : merchantMainNavItems;
+  const bottomNavItems = currentRole === 'driver' ? driverBottomNavItems : merchantBottomNavItems;
+  const portalLabel = currentRole === 'driver' ? 'Driver Portal' : 'Merchant Portal';
 
   const renderNavItem = (item: NavItem) => {
     const isActive = location.pathname === item.href;
@@ -136,7 +155,7 @@ export function AppSidebar({ collapsed, onToggle, isMobile, onMobileClose }: App
         {(!collapsed || isMobile) && (
           <div className="flex flex-col">
             <span className="text-sidebar-foreground font-semibold text-sm">NBC Sokoni</span>
-            <span className="text-sidebar-muted text-xs">Merchant Portal</span>
+            <span className="text-sidebar-muted text-xs">{portalLabel}</span>
           </div>
         )}
       </div>

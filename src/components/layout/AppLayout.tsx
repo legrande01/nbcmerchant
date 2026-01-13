@@ -15,6 +15,9 @@ const pageTitles: Record<string, string> = {
   '/reports': 'Reports & Analytics',
   '/settings': 'Settings',
   '/support': 'Support',
+  '/driver/deliveries': 'Deliveries',
+  '/driver/verification': 'Proof & Verification',
+  '/driver/profile': 'My Profile',
 };
 
 export function AppLayout() {
