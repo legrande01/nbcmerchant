@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RoleProvider, useRole } from "@/contexts/RoleContext";
+import { DeliveryProvider } from "@/contexts/DeliveryContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -77,9 +78,11 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <RoleProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <DeliveryProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </DeliveryProvider>
         </RoleProvider>
       </BrowserRouter>
     </TooltipProvider>
