@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { mockNotifications, mockStoreInfo } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
+import { RoleSwitcher } from './RoleSwitcher';
 
 interface AppHeaderProps {
   onMenuClick: () => void;
@@ -44,6 +45,9 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
             className="pl-9 w-64 bg-secondary border-0"
           />
         </div>
+
+        {/* Role Switcher */}
+        <RoleSwitcher />
 
         {/* Notifications */}
         <DropdownMenu>
