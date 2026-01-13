@@ -3,11 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { RoleProvider } from "@/contexts/RoleContext";
+import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useAuth } from "@/contexts/AuthContext";
 import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
 import OrderDetails from "@/pages/OrderDetails";
@@ -32,7 +30,7 @@ import DriverProfile from "@/pages/driver/DriverProfile";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { currentRole } = useAuth();
+  const { currentRole } = useRole();
   
   return (
     <Routes>
@@ -78,13 +76,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <AuthProvider>
-          <RoleProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-          </RoleProvider>
-        </AuthProvider>
+        <RoleProvider>
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+        </RoleProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
