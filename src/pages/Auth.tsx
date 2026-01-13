@@ -118,16 +118,6 @@ export default function Auth() {
                   <Truck className="h-4 w-4" />
                   Driver: driver@demo.com
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  onClick={() => fillDemoCredentials('admin@demo.com')}
-                >
-                  <Store className="h-4 w-4" />
-                  <Truck className="h-4 w-4 -ml-2" />
-                  Both Roles: admin@demo.com
-                </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   Password for all: <code className="bg-muted px-1 rounded">demo123</code>
                 </p>
