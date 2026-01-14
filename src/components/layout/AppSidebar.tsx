@@ -46,6 +46,7 @@ const driverMainNavItems: NavItem[] = [
   { title: 'Dashboard', href: '/', icon: LayoutDashboard },
   { title: 'Deliveries', href: '/driver/deliveries', icon: Truck },
   { title: 'Verification', href: '/driver/verification', icon: ClipboardCheck },
+  { title: 'Payments', href: '/driver/payments', icon: CreditCard },
   { title: 'Profile', href: '/driver/profile', icon: User },
 ];
 
@@ -55,7 +56,7 @@ const merchantBottomNavItems: NavItem[] = [
 ];
 
 const driverBottomNavItems: NavItem[] = [
-  { title: 'Help & Support', href: '/help', icon: HelpCircle },
+  { title: 'Help & Support', href: '/driver/help', icon: HelpCircle },
   { title: 'Settings', href: '/settings', icon: Settings },
 ];
 

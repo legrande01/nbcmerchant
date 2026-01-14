@@ -27,6 +27,8 @@ import DriverDashboard from "@/pages/driver/DriverDashboard";
 import DriverDeliveries from "@/pages/driver/DriverDeliveries";
 import DriverVerification from "@/pages/driver/DriverVerification";
 import DriverProfile from "@/pages/driver/DriverProfile";
+import DriverPayments from "@/pages/driver/DriverPayments";
+import DriverHelp from "@/pages/driver/DriverHelp";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +62,9 @@ function AppRoutes() {
           {/* Driver routes */}
           <Route path="/driver/deliveries" element={<DriverDeliveries />} />
           <Route path="/driver/verification" element={<DriverVerification />} />
+          <Route path="/driver/payments" element={<DriverPayments />} />
           <Route path="/driver/profile" element={<DriverProfile />} />
+          <Route path="/driver/help" element={<DriverHelp />} />
           
           {/* Shared routes */}
           <Route path="/help" element={<Help />} />
