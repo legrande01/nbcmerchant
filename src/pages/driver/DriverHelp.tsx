@@ -448,8 +448,8 @@ export default function DriverHelp() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a delivery (optional)" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No delivery linked</SelectItem>
+                <SelectContent>
+                    <SelectItem value="none">No delivery linked</SelectItem>
                     {mockDriverDeliveries.map((delivery) => (
                       <SelectItem key={delivery.id} value={delivery.id}>
                         {delivery.id} - {delivery.customerName}
