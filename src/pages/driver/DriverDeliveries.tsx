@@ -9,9 +9,20 @@ import {
   Search,
   ExternalLink,
   AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Image as ImageIcon,
+  Camera,
+  CreditCard,
+  User,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -156,21 +167,61 @@ export default function DriverDeliveries() {
     }
   };
 
-  // Map highlight logic based on status
+  // Map highlight logic based on status - now with enhanced visual states
   const getMapHighlight = (status: DriverDeliveryStatus) => {
     switch (status) {
       case 'awaiting_pickup':
-        return { pickup: true, route: false, dropoff: false };
+        // Highlight pickup pin (larger + brighter)
+        return { 
+          pickup: { visible: true, highlighted: true, size: 'lg' }, 
+          route: { visible: true, highlighted: false, muted: true }, 
+          dropoff: { visible: true, highlighted: false, muted: true } 
+        };
       case 'in_transit':
-        return { pickup: false, route: true, dropoff: true };
+        // Highlight the route line
+        return { 
+          pickup: { visible: true, highlighted: false, muted: false }, 
+          route: { visible: true, highlighted: true, muted: false }, 
+          dropoff: { visible: true, highlighted: true, muted: false } 
+        };
       case 'awaiting_buyer_confirmation':
+        // Highlight drop-off pin
+        return { 
+          pickup: { visible: true, highlighted: false, muted: true }, 
+          route: { visible: true, highlighted: false, muted: true }, 
+          dropoff: { visible: true, highlighted: true, size: 'lg' } 
+        };
       case 'delivered':
       case 'dispute':
-        return { pickup: false, route: false, dropoff: true };
+        // Show both pins + route in muted state
+        return { 
+          pickup: { visible: true, highlighted: false, muted: true }, 
+          route: { visible: true, highlighted: false, muted: true }, 
+          dropoff: { visible: true, highlighted: false, muted: true } 
+        };
       default:
-        return { pickup: true, route: false, dropoff: false };
+        return { 
+          pickup: { visible: true, highlighted: true, size: 'lg' }, 
+          route: { visible: true, highlighted: false, muted: true }, 
+          dropoff: { visible: true, highlighted: false, muted: true } 
+        };
     }
   };
+
+  // Helper to get proof status display
+  const getProofStatusDisplay = (status: 'pending' | 'approved' | 'rejected') => {
+    switch (status) {
+      case 'approved':
+        return { label: 'Approved', color: 'text-green-600', bgColor: 'bg-green-100', icon: CheckCircle2 };
+      case 'rejected':
+        return { label: 'Rejected', color: 'text-destructive', bgColor: 'bg-destructive/10', icon: XCircle };
+      default:
+        return { label: 'Pending', color: 'text-amber-600', bgColor: 'bg-amber-100', icon: Clock };
+    }
+  };
+
+  // State for image viewer dialog
+  const [viewingImage, setViewingImage] = useState<{ url: string; title: string } | null>(null);
 
   const mapHighlight = selectedDelivery ? getMapHighlight(selectedDelivery.status) : null;
 
@@ -364,20 +415,131 @@ export default function DriverDeliveries() {
               </CardContent>
             </Card>
 
-            {/* Delivery Journey Timeline */}
+            {/* Delivery Journey Timeline with Proof Status */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Delivery Journey</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <DeliveryTimeline 
                   status={selectedDelivery.status}
                   assignedAt={selectedDelivery.assignedAt}
                   pickedUpAt={selectedDelivery.pickedUpAt}
                   deliveredAt={selectedDelivery.deliveredAt}
                 />
+                
+                {/* Proof Status Section */}
+                <Separator />
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Proof Status</h4>
+                  
+                  {/* Pickup Proof Status */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Pickup Proof</span>
+                    </div>
+                    {(() => {
+                      const pickupStatus = selectedDelivery.proof.pickupVerified 
+                        ? (selectedDelivery.proof.proofStatus === 'rejected' ? 'rejected' : 'approved')
+                        : 'pending';
+                      const display = getProofStatusDisplay(pickupStatus);
+                      const Icon = display.icon;
+                      return (
+                        <span className={cn('inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium', display.bgColor, display.color)}>
+                          <Icon className="h-3 w-3" />
+                          {display.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Delivery Proof Status */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Delivery Proof</span>
+                    </div>
+                    {(() => {
+                      const deliveryStatus = selectedDelivery.proof.deliveryVerified 
+                        ? 'approved' 
+                        : (selectedDelivery.proof.deliveryPhoto ? 'pending' : 'pending');
+                      const display = getProofStatusDisplay(deliveryStatus);
+                      const Icon = display.icon;
+                      return (
+                        <span className={cn('inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium', display.bgColor, display.color)}>
+                          <Icon className="h-3 w-3" />
+                          {display.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
               </CardContent>
             </Card>
+
+            {/* Delivery Evidence Section - Only for delivered orders */}
+            {selectedDelivery.status === 'delivered' && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Delivery Evidence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {/* Goods Photo */}
+                    <button
+                      onClick={() => setViewingImage({ url: '/placeholder.svg', title: 'Goods Photo' })}
+                      className="aspect-square bg-muted rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/80 transition-colors cursor-pointer border-2 border-transparent hover:border-primary/30"
+                    >
+                      <Package className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Goods</span>
+                      {selectedDelivery.proof.goodsPhoto && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </button>
+
+                    {/* Driver Selfie */}
+                    <button
+                      onClick={() => setViewingImage({ url: '/placeholder.svg', title: 'Driver Selfie' })}
+                      className="aspect-square bg-muted rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/80 transition-colors cursor-pointer border-2 border-transparent hover:border-primary/30"
+                    >
+                      <User className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Selfie</span>
+                      {selectedDelivery.proof.selfie && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </button>
+
+                    {/* ID Photo */}
+                    <button
+                      onClick={() => setViewingImage({ url: '/placeholder.svg', title: 'ID Photo' })}
+                      className="aspect-square bg-muted rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/80 transition-colors cursor-pointer border-2 border-transparent hover:border-primary/30"
+                    >
+                      <CreditCard className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">ID</span>
+                      {selectedDelivery.proof.idPhoto && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </button>
+
+                    {/* Delivery Photo */}
+                    <button
+                      onClick={() => setViewingImage({ url: '/placeholder.svg', title: 'Delivery Photo' })}
+                      className="aspect-square bg-muted rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/80 transition-colors cursor-pointer border-2 border-transparent hover:border-primary/30"
+                    >
+                      <Camera className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Delivery</span>
+                      {selectedDelivery.proof.deliveryPhoto && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Map Card */}
             <Card className="flex-1 min-h-[200px]">
@@ -401,42 +563,69 @@ export default function DriverDeliveries() {
                     ))}
                   </div>
                   
-                  {/* Mock route visualization */}
+                  {/* Mock route visualization with state-based styling */}
                   <div className="absolute inset-4 flex items-center justify-center">
                     <div className="relative w-full h-full">
-                      {/* Pickup marker */}
+                      {/* Pickup marker - size and brightness based on state */}
                       <div className={cn(
-                        "absolute top-4 left-8 flex items-center gap-2 transition-opacity",
-                        mapHighlight?.pickup ? 'opacity-100' : 'opacity-50'
+                        "absolute top-4 left-8 flex items-center gap-2 transition-all duration-300",
+                        mapHighlight?.pickup?.muted ? 'opacity-40' : 'opacity-100'
                       )}>
                         <div className={cn(
-                          "w-4 h-4 rounded-full border-2 border-white shadow-lg",
-                          mapHighlight?.pickup ? 'bg-green-500 ring-2 ring-green-300' : 'bg-green-500'
+                          "rounded-full border-2 border-white shadow-lg transition-all duration-300",
+                          mapHighlight?.pickup?.highlighted 
+                            ? 'bg-green-500 ring-4 ring-green-300/50 w-6 h-6 animate-pulse' 
+                            : 'bg-green-500 w-4 h-4',
+                          mapHighlight?.pickup?.size === 'lg' && 'w-6 h-6'
                         )} />
-                        <span className="text-xs bg-white px-2 py-1 rounded shadow">Pickup</span>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded shadow transition-all",
+                          mapHighlight?.pickup?.highlighted 
+                            ? 'bg-green-500 text-white font-medium' 
+                            : 'bg-white'
+                        )}>Pickup</span>
                       </div>
                       
-                      {/* Dotted path */}
+                      {/* Dotted path - highlighted when in transit */}
                       <svg className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
                         <path
                           d="M 48 32 Q 200 100 280 180"
-                          stroke={mapHighlight?.route ? 'hsl(var(--primary))' : '#ccc'}
-                          strokeWidth={mapHighlight?.route ? '3' : '2'}
-                          strokeDasharray={mapHighlight?.route ? '0' : '8 4'}
+                          stroke={mapHighlight?.route?.highlighted ? 'hsl(var(--primary))' : (mapHighlight?.route?.muted ? '#ddd' : '#ccc')}
+                          strokeWidth={mapHighlight?.route?.highlighted ? '4' : '2'}
+                          strokeDasharray={mapHighlight?.route?.highlighted ? '0' : '8 4'}
                           fill="none"
+                          className={cn(mapHighlight?.route?.highlighted && 'drop-shadow-lg')}
                         />
+                        {/* Animated dot on route when in transit */}
+                        {mapHighlight?.route?.highlighted && (
+                          <circle r="6" fill="hsl(var(--primary))" className="animate-pulse">
+                            <animateMotion 
+                              dur="3s" 
+                              repeatCount="indefinite"
+                              path="M 48 32 Q 200 100 280 180"
+                            />
+                          </circle>
+                        )}
                       </svg>
                       
-                      {/* Dropoff marker */}
+                      {/* Dropoff marker - size and brightness based on state */}
                       <div className={cn(
-                        "absolute bottom-4 right-8 flex items-center gap-2 transition-opacity",
-                        mapHighlight?.dropoff ? 'opacity-100' : 'opacity-50'
+                        "absolute bottom-4 right-8 flex items-center gap-2 transition-all duration-300",
+                        mapHighlight?.dropoff?.muted ? 'opacity-40' : 'opacity-100'
                       )}>
                         <div className={cn(
-                          "w-4 h-4 rounded-full border-2 border-white shadow-lg",
-                          mapHighlight?.dropoff ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
+                          "rounded-full border-2 border-white shadow-lg transition-all duration-300",
+                          mapHighlight?.dropoff?.highlighted 
+                            ? 'bg-primary ring-4 ring-primary/30 w-6 h-6 animate-pulse' 
+                            : 'bg-primary w-4 h-4',
+                          mapHighlight?.dropoff?.size === 'lg' && 'w-6 h-6'
                         )} />
-                        <span className="text-xs bg-white px-2 py-1 rounded shadow">Drop-off</span>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded shadow transition-all",
+                          mapHighlight?.dropoff?.highlighted 
+                            ? 'bg-primary text-primary-foreground font-medium' 
+                            : 'bg-white'
+                        )}>Drop-off</span>
                       </div>
                     </div>
                   </div>
@@ -453,6 +642,27 @@ export default function DriverDeliveries() {
           </Card>
         )}
       </div>
+
+      {/* Image Viewer Dialog */}
+      <Dialog open={!!viewingImage} onOpenChange={() => setViewingImage(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          <div className="relative">
+            <button 
+              onClick={() => setViewingImage(null)}
+              className="absolute top-3 right-3 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="aspect-square bg-muted flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <ImageIcon className="h-16 w-16 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">{viewingImage?.title}</p>
+                <p className="text-sm">Evidence photo placeholder</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
