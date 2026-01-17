@@ -26,11 +26,17 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Demo email to role mapping
-const DEMO_EMAIL_ROLES: Record<string, UserRole> = {
-  'merchant@demo.com': 'merchant',
-  'driver@demo.com': 'driver',
-  'admin@demo.com': 'transport_admin',
+// Demo email patterns for role assignment (used for role fetching fallback only)
+// The actual role assignment happens in the database via the edge function
+const DEMO_EMAIL_PATTERNS: readonly string[] = [
+  'merchant@demo.com',
+  'driver@demo.com', 
+  'admin@demo.com',
+] as const;
+
+// Helper to check if an email is a demo account
+const isDemoEmail = (email: string): boolean => {
+  return DEMO_EMAIL_PATTERNS.includes(email);
 };
 
 export function RoleProvider({ children }: { children: ReactNode }) {
@@ -53,20 +59,18 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   };
 
   const buildUserFromSession = async (supabaseUser: SupabaseUser, overrideRole?: UserRole): Promise<User> => {
-    const roles = await fetchUserRoles(supabaseUser.id);
+    let roles = await fetchUserRoles(supabaseUser.id);
     
-    // For demo accounts, ensure the expected role is in the roles array
-    const demoRole = DEMO_EMAIL_ROLES[supabaseUser.email || ''];
-    if (demoRole && !roles.includes(demoRole)) {
-      roles.unshift(demoRole); // Add the demo role at the start
+    // Ensure we have at least one role
+    if (!roles || roles.length === 0) {
+      roles = ['merchant'];
     }
     
-    // If an override role is specified, put it first
+    // If an override role is specified and it's in the user's roles, put it first
     if (overrideRole && roles.includes(overrideRole)) {
       const filteredRoles = roles.filter(r => r !== overrideRole);
       filteredRoles.unshift(overrideRole);
-      roles.length = 0;
-      roles.push(...filteredRoles);
+      roles = filteredRoles;
     }
     
     // Fetch profile for additional info
@@ -94,9 +98,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           const appUser = await buildUserFromSession(session.user);
           setUser(appUser);
-          // For demo accounts, set the correct role based on email
-          const demoRole = DEMO_EMAIL_ROLES[session.user.email || ''];
-          setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
+          // Use the first role from the database
+          setCurrentRole(appUser.roles[0] || 'merchant');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -112,9 +115,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session?.user) {
         const appUser = await buildUserFromSession(session.user);
         setUser(appUser);
-        // For demo accounts, set the correct role based on email
-        const demoRole = DEMO_EMAIL_ROLES[session.user.email || ''];
-        setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
+        // Use the first role from the database
+        setCurrentRole(appUser.roles[0] || 'merchant');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setCurrentRole('merchant');
@@ -140,9 +142,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         const appUser = await buildUserFromSession(data.user);
         setUser(appUser);
-        // For demo accounts, set the correct role
-        const demoRole = DEMO_EMAIL_ROLES[email];
-        setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
+        // Use the first role from the database
+        setCurrentRole(appUser.roles[0] || 'merchant');
       }
 
       return { success: true };
@@ -188,10 +189,10 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         }
 
         if (signupData.user) {
-          // Assign the demo role via edge function
+          // Assign the demo role via edge function (edge function uses authenticated user's email)
           try {
             await supabase.functions.invoke('assign-demo-role', {
-              body: { userId: signupData.user.id, email },
+              body: { email },
             });
           } catch (roleError) {
             console.error('Error assigning demo role:', roleError);
