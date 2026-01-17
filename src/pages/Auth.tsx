@@ -1,21 +1,44 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useRole } from '@/contexts/RoleContext';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useRole, UserRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Store, Truck, Building2 } from 'lucide-react';
 
+// Demo account configuration with role mapping
+const DEMO_ACCOUNTS = {
+  merchant: {
+    email: 'merchant@demo.com',
+    password: 'demo123',
+    name: 'Demo Merchant',
+    role: 'merchant' as UserRole,
+    redirectPath: '/',
+  },
+  driver: {
+    email: 'driver@demo.com',
+    password: 'demo123',
+    name: 'Demo Driver',
+    role: 'driver' as UserRole,
+    redirectPath: '/',
+  },
+  transport_admin: {
+    email: 'admin@demo.com',
+    password: 'demo123',
+    name: 'Demo Transport Admin',
+    role: 'transport_admin' as UserRole,
+    redirectPath: '/',
+  },
+};
+
 export default function Auth() {
-  const { isAuthenticated, login, signup, isLoading } = useRole();
+  const navigate = useNavigate();
+  const { isAuthenticated, loginDemo, login, isLoading } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
 
   if (isLoading) {
     return (
@@ -37,6 +60,7 @@ export default function Auth() {
     
     if (success) {
       toast.success('Welcome back!');
+      navigate('/');
     } else {
       toast.error('Login failed', { description: error });
     }
@@ -44,42 +68,22 @@ export default function Auth() {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+  const handleDemoLogin = async (demoType: 'merchant' | 'driver' | 'transport_admin') => {
     setIsSubmitting(true);
+    const demoAccount = DEMO_ACCOUNTS[demoType];
     
-    const { success, error } = await signup(email, password, fullName);
+    const { success, error } = await loginDemo(
+      demoAccount.email,
+      demoAccount.password,
+      demoAccount.role,
+      demoAccount.name
+    );
     
     if (success) {
-      toast.success('Account created successfully!');
+      toast.success(`Welcome, ${demoAccount.name}!`);
+      navigate(demoAccount.redirectPath);
     } else {
-      toast.error('Signup failed', { description: error });
-    }
-    
-    setIsSubmitting(false);
-  };
-
-  const handleQuickSignup = async (demoEmail: string, name: string) => {
-    setIsSubmitting(true);
-    
-    // First try to login
-    const loginResult = await login(demoEmail, 'demo123');
-    if (loginResult.success) {
-      toast.success('Welcome back!');
-      setIsSubmitting(false);
-      return;
-    }
-    
-    // If login fails, create the account
-    const signupResult = await signup(demoEmail, 'demo123', name);
-    if (signupResult.success) {
-      toast.success('Demo account created and logged in!');
-    } else {
-      toast.error('Failed to create demo account', { description: signupResult.error });
+      toast.error('Demo login failed', { description: error });
     }
     
     setIsSubmitting(false);
@@ -102,116 +106,58 @@ export default function Auth() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welcome</CardTitle>
+            <CardTitle>Sign In</CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email">Email</Label>
+                <Input
+                  id="signin-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signin-password">Password</Label>
+                <Input
+                  id="signin-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
 
             {/* Quick Demo Accounts */}
             <div className="mt-6 pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3 text-center">
-                Quick Demo Access (click to auto-create & login)
+                Quick Demo Access
               </p>
               <div className="space-y-2">
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => handleQuickSignup('merchant@demo.com', 'Demo Merchant')}
+                  onClick={() => handleDemoLogin('merchant')}
                   disabled={isSubmitting}
                 >
                   <Store className="h-4 w-4" />
@@ -221,7 +167,7 @@ export default function Auth() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => handleQuickSignup('driver@demo.com', 'Demo Driver')}
+                  onClick={() => handleDemoLogin('driver')}
                   disabled={isSubmitting}
                 >
                   <Truck className="h-4 w-4" />
@@ -231,7 +177,7 @@ export default function Auth() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => handleQuickSignup('admin@demo.com', 'Demo Transport Admin')}
+                  onClick={() => handleDemoLogin('transport_admin')}
                   disabled={isSubmitting}
                 >
                   <Building2 className="h-4 w-4" />
