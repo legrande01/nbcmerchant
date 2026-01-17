@@ -35,6 +35,7 @@ import AdminDeliveryDetail from "@/pages/admin/AdminDeliveryDetail";
 import AdminDrivers from "@/pages/admin/AdminDrivers";
 import AdminDriverDetail from "@/pages/admin/AdminDriverDetail";
 import AdminFleet from "@/pages/admin/AdminFleet";
+import AdminVehicleDetail from "@/pages/admin/AdminVehicleDetail";
 import AdminHelp from "@/pages/admin/AdminHelp";
 import AdminSettings from "@/pages/admin/AdminSettings";
 
@@ -86,6 +87,7 @@ function AppRoutes() {
           <Route path="/admin/drivers" element={<AdminDrivers />} />
           <Route path="/admin/drivers/:id" element={<AdminDriverDetail />} />
           <Route path="/admin/fleet" element={<AdminFleet />} />
+          <Route path="/admin/fleet/:id" element={<AdminVehicleDetail />} />
           <Route path="/admin/help" element={<AdminHelp />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           
