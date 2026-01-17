@@ -393,12 +393,15 @@ export default function AdminVehicleDetail() {
             </p>
             <div>
               <label className="text-sm font-medium">Select Driver</label>
-              <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
+              <Select 
+                value={selectedDriverId || "none"} 
+                onValueChange={(value) => setSelectedDriverId(value === "none" ? "" : value)}
+              >
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Choose a driver" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassign driver</SelectItem>
+                  <SelectItem value="none">Unassign driver</SelectItem>
                   {availableDrivers.map((driver) => (
                     <SelectItem key={driver.id} value={driver.id}>
                       {driver.name} - {driver.phone}
