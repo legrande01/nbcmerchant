@@ -264,14 +264,17 @@ export function AddVehicleModal({ open, onOpenChange, onVehicleAdded }: AddVehic
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assign Driver (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
+                    value={field.value || "none"}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select driver (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No driver assigned</SelectItem>
+                      <SelectItem value="none">No driver assigned</SelectItem>
                       {availableDrivers.map((driver) => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.name} - {driver.phone}
