@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, Plus } from 'lucide-react';
+import { Search, Filter, Eye, Plus, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockAdminVehicles, AdminVehicle } from '@/data/transportAdminData';
 import { AddVehicleModal } from '@/components/admin/AddVehicleModal';
+import { BulkVehicleImportModal } from '@/components/admin/BulkVehicleImportModal';
 
 const typeIcons: Record<string, string> = { bike: '🏍️', car: '🚗', van: '🚐', truck: '🚛' };
 
@@ -18,6 +19,7 @@ export default function AdminFleet() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [vehicles, setVehicles] = useState<AdminVehicle[]>(mockAdminVehicles);
 
   const filteredVehicles = vehicles.filter((v) => {
@@ -31,6 +33,10 @@ export default function AdminFleet() {
     setVehicles((prev) => [newVehicle, ...prev]);
   };
 
+  const handleBulkImport = (newVehicles: AdminVehicle[]) => {
+    setVehicles((prev) => [...newVehicles, ...prev]);
+  };
+
   const handleRowClick = (vehicleId: string) => {
     navigate(`/admin/fleet/${vehicleId}`);
   };
@@ -42,10 +48,16 @@ export default function AdminFleet() {
           <h1 className="text-2xl font-bold">Fleet</h1>
           <p className="text-muted-foreground">Manage your transport company vehicles</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Vehicle
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImportModal(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vehicle
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -181,6 +193,13 @@ export default function AdminFleet() {
         open={showAddModal}
         onOpenChange={setShowAddModal}
         onVehicleAdded={handleVehicleAdded}
+      />
+
+      <BulkVehicleImportModal
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        onVehiclesImported={handleBulkImport}
+        existingPlateNumbers={vehicles.map((v) => v.plateNumber)}
       />
     </div>
   );
