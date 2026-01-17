@@ -1,52 +1,18 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useRole, UserRole } from '@/contexts/RoleContext';
+import { Navigate } from 'react-router-dom';
+import { useRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Store, Truck, Building2 } from 'lucide-react';
-
-// Demo account configuration with role mapping
-const DEMO_ACCOUNTS = {
-  merchant: {
-    email: 'merchant@demo.com',
-    password: 'demo123',
-    name: 'Demo Merchant',
-    role: 'merchant' as UserRole,
-    redirectPath: '/',
-  },
-  driver: {
-    email: 'driver@demo.com',
-    password: 'demo123',
-    name: 'Demo Driver',
-    role: 'driver' as UserRole,
-    redirectPath: '/',
-  },
-  transport_admin: {
-    email: 'admin@demo.com',
-    password: 'demo123',
-    name: 'Demo Transport Admin',
-    role: 'transport_admin' as UserRole,
-    redirectPath: '/',
-  },
-};
+import { Loader2, Store, Truck } from 'lucide-react';
 
 export default function Auth() {
-  const navigate = useNavigate();
-  const { isAuthenticated, loginDemo, login, isLoading } = useRole();
+  const { isAuthenticated, login } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -60,7 +26,6 @@ export default function Auth() {
     
     if (success) {
       toast.success('Welcome back!');
-      navigate('/');
     } else {
       toast.error('Login failed', { description: error });
     }
@@ -68,25 +33,9 @@ export default function Auth() {
     setIsSubmitting(false);
   };
 
-  const handleDemoLogin = async (demoType: 'merchant' | 'driver' | 'transport_admin') => {
-    setIsSubmitting(true);
-    const demoAccount = DEMO_ACCOUNTS[demoType];
-    
-    const { success, error } = await loginDemo(
-      demoAccount.email,
-      demoAccount.password,
-      demoAccount.role,
-      demoAccount.name
-    );
-    
-    if (success) {
-      toast.success(`Welcome, ${demoAccount.name}!`);
-      navigate(demoAccount.redirectPath);
-    } else {
-      toast.error('Demo login failed', { description: error });
-    }
-    
-    setIsSubmitting(false);
+  const fillDemoCredentials = (userEmail: string) => {
+    setEmail(userEmail);
+    setPassword('demo123');
   };
 
   return (
@@ -101,22 +50,22 @@ export default function Auth() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">NBC Sokoni</h1>
-          <p className="text-muted-foreground">Merchant, Driver & Admin Portal</p>
+          <p className="text-muted-foreground">Merchant & Driver Portal</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Welcome</CardTitle>
             <CardDescription>
-              Enter your credentials to access your account
+              Sign in with demo credentials
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="signin-email"
+                  id="email"
                   type="email"
                   placeholder="you@example.com"
                   value={email}
@@ -125,9 +74,9 @@ export default function Auth() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="signin-password"
+                  id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
@@ -147,42 +96,31 @@ export default function Auth() {
               </Button>
             </form>
 
-            {/* Quick Demo Accounts */}
+            {/* Demo Credentials */}
             <div className="mt-6 pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3 text-center">
-                Quick Demo Access
-              </p>
+              <p className="text-sm text-muted-foreground mb-3 text-center">Demo Accounts</p>
               <div className="space-y-2">
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => handleDemoLogin('merchant')}
-                  disabled={isSubmitting}
+                  onClick={() => fillDemoCredentials('merchant@demo.com')}
                 >
                   <Store className="h-4 w-4" />
-                  Merchant Demo
+                  Merchant: merchant@demo.com
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => handleDemoLogin('driver')}
-                  disabled={isSubmitting}
+                  onClick={() => fillDemoCredentials('driver@demo.com')}
                 >
                   <Truck className="h-4 w-4" />
-                  Driver Demo
+                  Driver: driver@demo.com
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  onClick={() => handleDemoLogin('transport_admin')}
-                  disabled={isSubmitting}
-                >
-                  <Building2 className="h-4 w-4" />
-                  Transport Admin Demo
-                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Password for all: <code className="bg-muted px-1 rounded">demo123</code>
+                </p>
               </div>
             </div>
           </CardContent>

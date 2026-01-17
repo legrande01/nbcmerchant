@@ -14,8 +14,6 @@ import {
   Truck,
   ClipboardCheck,
   User,
-  Users,
-  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,12 +50,6 @@ const driverMainNavItems: NavItem[] = [
   { title: 'Profile', href: '/driver/profile', icon: User },
 ];
 
-const adminMainNavItems: NavItem[] = [
-  { title: 'Delivery Management', href: '/admin/deliveries', icon: Package },
-  { title: 'Drivers', href: '/admin/drivers', icon: Users },
-  { title: 'Fleet', href: '/admin/fleet', icon: Truck },
-];
-
 const merchantBottomNavItems: NavItem[] = [
   { title: 'Help & Support', href: '/help', icon: HelpCircle },
   { title: 'Settings', href: '/settings', icon: Settings },
@@ -66,11 +58,6 @@ const merchantBottomNavItems: NavItem[] = [
 const driverBottomNavItems: NavItem[] = [
   { title: 'Help & Support', href: '/driver/help', icon: HelpCircle },
   { title: 'Settings', href: '/settings', icon: Settings },
-];
-
-const adminBottomNavItems: NavItem[] = [
-  { title: 'Help & Support', href: '/admin/help', icon: HelpCircle },
-  { title: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 interface AppSidebarProps {
@@ -84,9 +71,9 @@ export function AppSidebar({ collapsed, onToggle, isMobile, onMobileClose }: App
   const location = useLocation();
   const { currentRole } = useRole();
   
-  const mainNavItems = currentRole === 'driver' ? driverMainNavItems : currentRole === 'transport_admin' ? adminMainNavItems : merchantMainNavItems;
-  const bottomNavItems = currentRole === 'driver' ? driverBottomNavItems : currentRole === 'transport_admin' ? adminBottomNavItems : merchantBottomNavItems;
-  const portalLabel = currentRole === 'driver' ? 'Driver Portal' : currentRole === 'transport_admin' ? 'Admin Portal' : 'Merchant Portal';
+  const mainNavItems = currentRole === 'driver' ? driverMainNavItems : merchantMainNavItems;
+  const bottomNavItems = currentRole === 'driver' ? driverBottomNavItems : merchantBottomNavItems;
+  const portalLabel = currentRole === 'driver' ? 'Driver Portal' : 'Merchant Portal';
 
   const renderNavItem = (item: NavItem) => {
     const isActive = location.pathname === item.href;
