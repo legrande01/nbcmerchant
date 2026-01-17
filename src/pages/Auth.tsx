@@ -5,14 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Store, Truck } from 'lucide-react';
+import { Loader2, Store, Truck, Building2 } from 'lucide-react';
 
 export default function Auth() {
-  const { isAuthenticated, login } = useRole();
+  const { isAuthenticated, login, signup, isLoading } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -33,9 +44,45 @@ export default function Auth() {
     setIsSubmitting(false);
   };
 
-  const fillDemoCredentials = (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword('demo123');
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setIsSubmitting(true);
+    
+    const { success, error } = await signup(email, password, fullName);
+    
+    if (success) {
+      toast.success('Account created successfully!');
+    } else {
+      toast.error('Signup failed', { description: error });
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  const handleQuickSignup = async (demoEmail: string, name: string) => {
+    setIsSubmitting(true);
+    
+    // First try to login
+    const loginResult = await login(demoEmail, 'demo123');
+    if (loginResult.success) {
+      toast.success('Welcome back!');
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // If login fails, create the account
+    const signupResult = await signup(demoEmail, 'demo123', name);
+    if (signupResult.success) {
+      toast.success('Demo account created and logged in!');
+    } else {
+      toast.error('Failed to create demo account', { description: signupResult.error });
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (
@@ -50,77 +97,146 @@ export default function Auth() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">NBC Sokoni</h1>
-          <p className="text-muted-foreground">Merchant & Driver Portal</p>
+          <p className="text-muted-foreground">Merchant, Driver & Admin Portal</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Welcome</CardTitle>
             <CardDescription>
-              Sign in with demo credentials
+              Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
-            </form>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
 
-            {/* Demo Credentials */}
+              <TabsContent value="signin">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign In'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup">
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      'Create Account'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            {/* Quick Demo Accounts */}
             <div className="mt-6 pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-3 text-center">Demo Accounts</p>
+              <p className="text-sm text-muted-foreground mb-3 text-center">
+                Quick Demo Access (click to auto-create & login)
+              </p>
               <div className="space-y-2">
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => fillDemoCredentials('merchant@demo.com')}
+                  onClick={() => handleQuickSignup('merchant@demo.com', 'Demo Merchant')}
+                  disabled={isSubmitting}
                 >
                   <Store className="h-4 w-4" />
-                  Merchant: merchant@demo.com
+                  Merchant Demo
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => fillDemoCredentials('driver@demo.com')}
+                  onClick={() => handleQuickSignup('driver@demo.com', 'Demo Driver')}
+                  disabled={isSubmitting}
                 >
                   <Truck className="h-4 w-4" />
-                  Driver: driver@demo.com
+                  Driver Demo
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Password for all: <code className="bg-muted px-1 rounded">demo123</code>
-                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleQuickSignup('admin@demo.com', 'Demo Transport Admin')}
+                  disabled={isSubmitting}
+                >
+                  <Building2 className="h-4 w-4" />
+                  Transport Admin Demo
+                </Button>
               </div>
             </div>
           </CardContent>
