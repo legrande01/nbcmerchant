@@ -1,22 +1,17 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Store, Truck } from 'lucide-react';
+import { Loader2, Store, Truck, Building2 } from 'lucide-react';
 
 export default function Auth() {
-  const { isAuthenticated, login } = useRole();
+  const { login } = useRole();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +45,7 @@ export default function Auth() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">NBC Sokoni</h1>
-          <p className="text-muted-foreground">Merchant & Driver Portal</p>
+          <p className="text-muted-foreground">Merchant, Driver & Transport Admin Portal</p>
         </div>
 
         <Card>
@@ -117,6 +112,15 @@ export default function Auth() {
                 >
                   <Truck className="h-4 w-4" />
                   Driver: driver@demo.com
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={() => fillDemoCredentials('transport@demo.com')}
+                >
+                  <Building2 className="h-4 w-4" />
+                  Transport Admin: transport@demo.com
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   Password for all: <code className="bg-muted px-1 rounded">demo123</code>

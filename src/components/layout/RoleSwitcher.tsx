@@ -1,4 +1,4 @@
-import { Store, Truck, ChevronDown, Check } from 'lucide-react';
+import { Store, Truck, ChevronDown, Check, Building2, Shield } from 'lucide-react';
 import { useRole, UserRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,14 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ComponentType<{ 
     label: 'Driver',
     icon: Truck,
   },
+  transport_admin: {
+    label: 'Transport Admin',
+    icon: Building2,
+  },
+  admin: {
+    label: 'Admin',
+    icon: Shield,
+  },
 };
 
 export function RoleSwitcher() {
@@ -29,7 +37,7 @@ export function RoleSwitcher() {
     return null;
   }
 
-  const CurrentIcon = roleConfig[currentRole].icon;
+  const CurrentIcon = currentRole ? roleConfig[currentRole]?.icon : Store;
 
   const handleRoleSwitch = (role: UserRole) => {
     setCurrentRole(role);
@@ -44,8 +52,8 @@ export function RoleSwitcher() {
           size="sm"
           className="gap-2 bg-secondary border-border hover:bg-secondary/80"
         >
-          <CurrentIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">{roleConfig[currentRole].label}</span>
+          {CurrentIcon && <CurrentIcon className="h-4 w-4" />}
+          <span className="hidden sm:inline">{currentRole ? roleConfig[currentRole]?.label : 'Unknown'}</span>
           <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
