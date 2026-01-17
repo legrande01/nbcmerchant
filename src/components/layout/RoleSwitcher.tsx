@@ -1,4 +1,4 @@
-import { Store, Truck, ChevronDown, Check } from 'lucide-react';
+import { Store, Truck, ChevronDown, Check, Building2 } from 'lucide-react';
 import { useRole, UserRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +18,10 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ComponentType<{ 
   driver: {
     label: 'Driver',
     icon: Truck,
+  },
+  transport_admin: {
+    label: 'Transport Admin',
+    icon: Building2,
   },
 };
 
