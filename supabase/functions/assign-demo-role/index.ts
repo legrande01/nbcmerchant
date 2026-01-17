@@ -34,31 +34,29 @@ serve(async (req) => {
       role = 'driver';
     } else if (email === 'admin@demo.com') {
       role = 'transport_admin';
+    } else if (email === 'merchant@demo.com') {
+      role = 'merchant';
     }
 
-    // Only update role if it's not merchant (merchant is default)
-    if (role !== 'merchant') {
-      // First, check if this role already exists for the user
-      const { data: existingRole } = await supabase
+    // Insert the role for the user
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', role)
+      .maybeSingle();
+
+    if (!existingRole) {
+      const { error: insertError } = await supabase
         .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('role', role)
-        .maybeSingle();
+        .insert({ user_id: userId, role });
 
-      if (!existingRole) {
-        // Insert the new role
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role });
-
-        if (insertError) {
-          console.error('Error inserting role:', insertError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to assign role' }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      if (insertError) {
+        console.error('Error inserting role:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to assign role' }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 

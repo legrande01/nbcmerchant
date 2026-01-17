@@ -20,11 +20,18 @@ interface RoleContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
+  loginDemo: (email: string, password: string, role: UserRole, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
+
+// Demo email to role mapping
+const DEMO_EMAIL_ROLES: Record<string, UserRole> = {
+  'merchant@demo.com': 'merchant',
+  'driver@demo.com': 'driver',
+  'admin@demo.com': 'transport_admin',
+};
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -45,8 +52,22 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const buildUserFromSession = async (supabaseUser: SupabaseUser): Promise<User> => {
+  const buildUserFromSession = async (supabaseUser: SupabaseUser, overrideRole?: UserRole): Promise<User> => {
     const roles = await fetchUserRoles(supabaseUser.id);
+    
+    // For demo accounts, ensure the expected role is in the roles array
+    const demoRole = DEMO_EMAIL_ROLES[supabaseUser.email || ''];
+    if (demoRole && !roles.includes(demoRole)) {
+      roles.unshift(demoRole); // Add the demo role at the start
+    }
+    
+    // If an override role is specified, put it first
+    if (overrideRole && roles.includes(overrideRole)) {
+      const filteredRoles = roles.filter(r => r !== overrideRole);
+      filteredRoles.unshift(overrideRole);
+      roles.length = 0;
+      roles.push(...filteredRoles);
+    }
     
     // Fetch profile for additional info
     const { data: profile } = await supabase
@@ -73,7 +94,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           const appUser = await buildUserFromSession(session.user);
           setUser(appUser);
-          setCurrentRole(appUser.roles[0] || 'merchant');
+          // For demo accounts, set the correct role based on email
+          const demoRole = DEMO_EMAIL_ROLES[session.user.email || ''];
+          setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -89,7 +112,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session?.user) {
         const appUser = await buildUserFromSession(session.user);
         setUser(appUser);
-        setCurrentRole(appUser.roles[0] || 'merchant');
+        // For demo accounts, set the correct role based on email
+        const demoRole = DEMO_EMAIL_ROLES[session.user.email || ''];
+        setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setCurrentRole('merchant');
@@ -115,7 +140,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         const appUser = await buildUserFromSession(data.user);
         setUser(appUser);
-        setCurrentRole(appUser.roles[0] || 'merchant');
+        // For demo accounts, set the correct role
+        const demoRole = DEMO_EMAIL_ROLES[email];
+        setCurrentRole(demoRole || appUser.roles[0] || 'merchant');
       }
 
       return { success: true };
@@ -124,46 +151,65 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string }> => {
+  const loginDemo = async (
+    email: string,
+    password: string,
+    role: UserRole,
+    name: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // First try to log in
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
-        },
       });
 
-      if (error) {
-        return { success: false, error: error.message };
+      if (loginData?.user) {
+        // Login successful - set the role based on the demo type
+        const appUser = await buildUserFromSession(loginData.user, role);
+        setUser(appUser);
+        setCurrentRole(role);
+        return { success: true };
       }
 
-      if (data.user) {
-        // For demo accounts, assign the appropriate role
-        const demoEmails = ['driver@demo.com', 'admin@demo.com'];
-        if (demoEmails.includes(email)) {
+      // If login failed, try to create the demo account
+      if (loginError?.message?.includes('Invalid login credentials')) {
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name },
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
+
+        if (signupError) {
+          return { success: false, error: signupError.message };
+        }
+
+        if (signupData.user) {
+          // Assign the demo role via edge function
           try {
             await supabase.functions.invoke('assign-demo-role', {
-              body: { userId: data.user.id, email },
+              body: { userId: signupData.user.id, email },
             });
           } catch (roleError) {
             console.error('Error assigning demo role:', roleError);
           }
-        }
 
-        // Small delay to ensure role is assigned before fetching
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const appUser = await buildUserFromSession(data.user);
-        setUser(appUser);
-        setCurrentRole(appUser.roles[0] || 'merchant');
+          // Small delay to ensure role is assigned
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          const appUser = await buildUserFromSession(signupData.user, role);
+          setUser(appUser);
+          setCurrentRole(role);
+          return { success: true };
+        }
       }
 
-      return { success: true };
+      return { success: false, error: loginError?.message || 'Login failed' };
     } catch (err) {
+      console.error('Demo login error:', err);
       return { success: false, error: 'An unexpected error occurred' };
     }
   };
@@ -182,7 +228,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     login,
-    signup,
+    loginDemo,
     logout,
   };
 
