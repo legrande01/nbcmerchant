@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
-export type UserRole = 'merchant' | 'driver';
+export type UserRole = 'merchant' | 'driver' | 'transport_admin';
 
 interface User {
   id: string;
@@ -16,64 +18,142 @@ interface RoleContextType {
   setCurrentRole: (role: UserRole) => void;
   hasMultipleRoles: boolean;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  signup: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-// Dummy users for demo
-const dummyUsers: Record<string, { password: string; user: User }> = {
-  'merchant@demo.com': {
-    password: 'demo123',
-    user: {
-      id: 'user-1',
-      name: 'James Kioko',
-      email: 'merchant@demo.com',
-      roles: ['merchant'],
-    },
-  },
-  'driver@demo.com': {
-    password: 'demo123',
-    user: {
-      id: 'user-2',
-      name: 'Sarah Mwangi',
-      email: 'driver@demo.com',
-      roles: ['driver'],
-    },
-  },
-  'admin@demo.com': {
-    password: 'demo123',
-    user: {
-      id: 'user-3',
-      name: 'Admin User',
-      email: 'admin@demo.com',
-      roles: ['merchant', 'driver'], // Has both roles
-    },
-  },
-};
-
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole>('merchant');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const dummyUser = dummyUsers[email.toLowerCase()];
-    
-    if (!dummyUser) {
-      return { success: false, error: 'User not found' };
+  const fetchUserRoles = async (userId: string): Promise<UserRole[]> => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_roles', { _user_id: userId });
+      if (error) {
+        console.error('Error fetching user roles:', error);
+        return ['merchant']; // Default role
+      }
+      return (data as UserRole[]) || ['merchant'];
+    } catch (err) {
+      console.error('Error in fetchUserRoles:', err);
+      return ['merchant'];
     }
-    
-    if (dummyUser.password !== password) {
-      return { success: false, error: 'Invalid password' };
-    }
-    
-    setUser(dummyUser.user);
-    setCurrentRole(dummyUser.user.roles[0]);
-    return { success: true };
   };
 
-  const logout = () => {
+  const buildUserFromSession = async (supabaseUser: SupabaseUser): Promise<User> => {
+    const roles = await fetchUserRoles(supabaseUser.id);
+    
+    // Fetch profile for additional info
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('user_id', supabaseUser.id)
+      .maybeSingle();
+
+    return {
+      id: supabaseUser.id,
+      name: profile?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+      email: supabaseUser.email || '',
+      roles,
+      avatar: profile?.avatar_url || undefined,
+    };
+  };
+
+  useEffect(() => {
+    // Check for existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const appUser = await buildUserFromSession(session.user);
+          setUser(appUser);
+          setCurrentRole(appUser.roles[0] || 'merchant');
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const appUser = await buildUserFromSession(session.user);
+        setUser(appUser);
+        setCurrentRole(appUser.roles[0] || 'merchant');
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setCurrentRole('merchant');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const appUser = await buildUserFromSession(data.user);
+        setUser(appUser);
+        setCurrentRole(appUser.roles[0] || 'merchant');
+      }
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  const signup = async (email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const appUser = await buildUserFromSession(data.user);
+        setUser(appUser);
+        setCurrentRole(appUser.roles[0] || 'merchant');
+      }
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     setCurrentRole('merchant');
   };
@@ -84,7 +164,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     setCurrentRole,
     hasMultipleRoles: (user?.roles.length ?? 0) > 1,
     isAuthenticated: !!user,
+    isLoading,
     login,
+    signup,
     logout,
   };
 

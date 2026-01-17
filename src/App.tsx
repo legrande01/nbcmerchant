@@ -29,11 +29,25 @@ import DriverVerification from "@/pages/driver/DriverVerification";
 import DriverProfile from "@/pages/driver/DriverProfile";
 import DriverPayments from "@/pages/driver/DriverPayments";
 import DriverHelp from "@/pages/driver/DriverHelp";
+// Transport Admin imports
+import AdminDeliveryManagement from "@/pages/admin/AdminDeliveryManagement";
+import AdminDeliveryDetail from "@/pages/admin/AdminDeliveryDetail";
+import AdminDrivers from "@/pages/admin/AdminDrivers";
+import AdminDriverDetail from "@/pages/admin/AdminDriverDetail";
+import AdminFleet from "@/pages/admin/AdminFleet";
+import AdminHelp from "@/pages/admin/AdminHelp";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { currentRole } = useRole();
+  
+  const getDashboard = () => {
+    if (currentRole === 'driver') return <DriverDashboard />;
+    if (currentRole === 'transport_admin') return <AdminDeliveryManagement />;
+    return <Dashboard />;
+  };
   
   return (
     <Routes>
@@ -44,7 +58,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           {/* Role-based dashboard */}
-          <Route path="/" element={currentRole === 'driver' ? <DriverDashboard /> : <Dashboard />} />
+          <Route path="/" element={getDashboard()} />
           
           {/* Merchant routes */}
           <Route path="/orders" element={<Orders />} />
@@ -65,6 +79,15 @@ function AppRoutes() {
           <Route path="/driver/payments" element={<DriverPayments />} />
           <Route path="/driver/profile" element={<DriverProfile />} />
           <Route path="/driver/help" element={<DriverHelp />} />
+          
+          {/* Transport Admin routes */}
+          <Route path="/admin/deliveries" element={<AdminDeliveryManagement />} />
+          <Route path="/admin/deliveries/:id" element={<AdminDeliveryDetail />} />
+          <Route path="/admin/drivers" element={<AdminDrivers />} />
+          <Route path="/admin/drivers/:id" element={<AdminDriverDetail />} />
+          <Route path="/admin/fleet" element={<AdminFleet />} />
+          <Route path="/admin/help" element={<AdminHelp />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
           
           {/* Shared routes */}
           <Route path="/help" element={<Help />} />
