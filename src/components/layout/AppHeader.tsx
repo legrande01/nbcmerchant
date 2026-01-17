@@ -65,6 +65,7 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
 
   // Use different notifications based on role
   const isDriver = currentRole === 'driver';
+  const isTransportAdmin = currentRole === 'transport_admin';
   const notifications = isDriver ? driverNotifications : mockNotifications;
   const unreadCount = isDriver 
     ? getUnreadDriverNotifications().length 
@@ -105,7 +106,7 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
         <div className="hidden md:flex relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={isDriver ? "Search deliveries..." : "Search products, orders..."}
+            placeholder={isDriver ? "Search deliveries..." : isTransportAdmin ? "Search deliveries, drivers..." : "Search products, orders..."}
             className="pl-9 w-64 bg-secondary border-0"
           />
         </div>
@@ -208,10 +209,10 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate(isDriver ? '/driver/profile' : '/settings')}>
+            <DropdownMenuItem onClick={() => navigate(isDriver ? '/driver/profile' : isTransportAdmin ? '/admin/settings' : '/settings')}>
               Profile Settings
             </DropdownMenuItem>
-            {!isDriver && (
+            {!isDriver && !isTransportAdmin && (
               <DropdownMenuItem onClick={() => navigate('/store')}>
                 Store Settings
               </DropdownMenuItem>
@@ -219,6 +220,11 @@ export function AppHeader({ onMenuClick, title = 'Dashboard' }: AppHeaderProps) 
             {isDriver && (
               <DropdownMenuItem onClick={() => navigate('/driver/payments')}>
                 Payments
+              </DropdownMenuItem>
+            )}
+            {isTransportAdmin && (
+              <DropdownMenuItem onClick={() => navigate('/admin/fleet')}>
+                Fleet Management
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
