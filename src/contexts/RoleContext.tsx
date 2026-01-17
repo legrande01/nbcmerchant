@@ -109,25 +109,28 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   }, [authLoading, authUser, demoUser]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // First try Supabase auth
+    const emailLower = email.toLowerCase();
+    
+    // Check if this is a demo account FIRST - always use demo mode for demo emails
+    const demo = demoUsers[emailLower];
+    if (demo && demo.password === password) {
+      // Use demo mode - sets the correct role immediately
+      setIsDemoMode(true);
+      setDemoUser({
+        id: `demo-${emailLower}`,
+        name: demo.name,
+        email: emailLower,
+        roles: demo.roles,
+      });
+      return { success: true };
+    }
+    
+    // For non-demo accounts, try Supabase auth
     const { error } = await signIn(email, password);
     
     if (!error) {
       setIsDemoMode(false);
       setDemoUser(null);
-      return { success: true };
-    }
-    
-    // Fallback to demo mode if Supabase auth fails
-    const demo = demoUsers[email.toLowerCase()];
-    if (demo && demo.password === password) {
-      setIsDemoMode(true);
-      setDemoUser({
-        id: `demo-${email}`,
-        name: demo.name,
-        email: email.toLowerCase(),
-        roles: demo.roles,
-      });
       return { success: true };
     }
     
