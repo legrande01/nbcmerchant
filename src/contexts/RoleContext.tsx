@@ -133,6 +133,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
@@ -141,6 +142,21 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
+        // For demo accounts, assign the appropriate role
+        const demoEmails = ['driver@demo.com', 'admin@demo.com'];
+        if (demoEmails.includes(email)) {
+          try {
+            await supabase.functions.invoke('assign-demo-role', {
+              body: { userId: data.user.id, email },
+            });
+          } catch (roleError) {
+            console.error('Error assigning demo role:', roleError);
+          }
+        }
+
+        // Small delay to ensure role is assigned before fetching
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const appUser = await buildUserFromSession(data.user);
         setUser(appUser);
         setCurrentRole(appUser.roles[0] || 'merchant');
